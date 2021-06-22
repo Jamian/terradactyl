@@ -1,0 +1,7 @@
+cryptography>=-3.4.7
+Django>=2.1.7
+gremlinpython==3.4.10
+requests>=2.25.1
+celery[redis]
+humanize==3.4.1
+networkx==2.5

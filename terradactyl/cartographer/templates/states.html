@@ -1,0 +1,1191 @@
+{% load static %}
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1,
+      shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Terradactyl - States</title>
+
+    <!-- Custom fonts for this template-->
+    <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}"
+      rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+
+    <link rel="shortcut icon" type="image/png" href="{% static 'img/favicon.ico' %}"/>
+    <!-- Custom styles for this template-->
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <link href="{% static 'css/d3-styles.css' %}" rel="stylesheet">
+
+  </head>
+
+  <body id="page-top">
+    <div id="app">
+      <!-- Page Wrapper -->
+      <div id="wrapper">
+
+      <!-- Sidebar -->
+      {% include 'snippets/sidebar.html' %}
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+          <!-- Main Content -->
+          <div id="content">
+
+            <!-- Topbar -->
+            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4
+              static-top shadow">
+
+              <!-- Sidebar Toggle (Topbar) -->
+              <button id="sidebarToggleTop" class="btn btn-link d-md-none
+                rounded-circle mr-3">
+                <i class="fa fa-bars"></i>
+              </button>
+
+              <!-- Topbar Navbar -->
+              <ul class="navbar-nav ml-auto">
+
+                <!-- Nav Item - Search Dropdown (Visible Only XS) -->
+                <li class="nav-item dropdown no-arrow d-sm-none">
+                  <a class="nav-link dropdown-toggle" href="#"
+                    id="searchDropdown"
+                    role="button"
+                    data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                    <i class="fas fa-search fa-fw"></i>
+                  </a>
+                </li>
+
+                <div class="topbar-divider d-none d-sm-block"></div>
+
+                <!-- Nav Item - User Information -->
+                <li class="nav-item dropdown no-arrow">
+                  <a class="nav-link dropdown-toggle" href="#" id="userDropdown"
+                    role="button"
+                    data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                    <span class="mr-2 d-none d-lg-inline text-gray-600 small">Jamie
+                      West</span>
+                  </a>
+                  <!-- Dropdown - User Information -->
+                  <div class="dropdown-menu dropdown-menu-right shadow
+                    animated--grow-in"
+                    aria-labelledby="userDropdown">
+                    <a class="dropdown-item" href="#">
+                      <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                      Profile
+                    </a>
+                    <a class="dropdown-item" href="#">
+                      <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                      Settings
+                    </a>
+                    <a class="dropdown-item" href="#">
+                      <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
+                      Activity Log
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" data-toggle="modal"
+                      data-target="#logoutModal">
+                      <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2
+                        text-gray-400"></i>
+                      Logout
+                    </a>
+                  </div>
+                </li>
+
+              </ul>
+
+            </nav>
+            <!-- End of Topbar -->
+
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+              <!-- Page Heading -->
+              <div class="d-sm-flex align-items-center justify-content-between
+                mb-4">
+                <h1 class="h3 mb-0 text-gray-800">Explore Network</h1>
+                <a href="/" class="d-none d-sm-inline-block btn btn-sm
+                  btn-primary
+                  shadow-sm"><i
+                    class="fas fa-download fa-sm text-white-50"></i> Generate
+                  Report</a>
+              </div>
+              <!-- Content Row -->
+              <div class="row">
+                        <!-- Total States -->
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                                Total States</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.state_count }} </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-file-code fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                                Total State Dependencies</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.dependency_count }} </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-link fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left shadow h-100 py-2" >
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                                Total Resources</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.resource_count }} </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-cubes fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                                Resource Types</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.resource_type_count }} </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-cube fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                      </div>
+                <div class="row">
+                  <!-- Network Graph -->
+                  <div class="col-lg">
+                    <div class="card shadow mb-4 border-bottom">
+                      <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text">
+                          <i style="padding-top: 0.75rem;" class="fas fa-project-diagram mr-1">
+                          </i> State Network
+                          <div class="d-none d-sm-inline-block form-inline mr-auto float-right" style="width: 30rem;" _lpchecked="1">
+                          <div class="input-group">
+                            <input type="text" class="form-control border-0"  placeholder="Search for..." v-model="newNetworkSearchValue" aria-label="Search" aria-describedby="basic-addon2">
+                            <div class="input-group-append">
+                                <div class="btn btn-primary">
+                                    <i class="fas fa-search fa-sm" style="padding-top: 0.4rem;"></i>
+                                </div>
+                            </div>
+                          </div>
+                          </h6>
+                      </div>
+                      <div class="card-body">
+                        
+                        <dependency-graph :data="data"></dependency-graph>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Network Graph Info Panel-->
+                  <div class="col-lg-3">
+                  <div class="card shadow mb-4 border-bottom">
+                    <div class="card-header py-3">
+                      <h6 class="m-0 font-weight-bold text"><i class="fas fa-sliders-h mr-1"></i>Graph Options</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="custom-control custom-switch">
+                            <input @click="$emit('groupByTerraformVersion')" type="checkbox" class="custom-control-input" id="terraformVersionGroupingSwitch">
+                            <label class="custom-control-label" for="terraformVersionGroupingSwitch">Show Terraform Versions</label>
+                        </div>
+                        </br>
+                        <div class="custom-control custom-switch">
+                            <input @click="$emit('showUsageHeatMap')" type="checkbox" class="custom-control-input" id="usageHeatMapSwitch">
+                            <label class="custom-control-label" for="usageHeatMapSwitch">Usage Heat Map</label>
+                        </div>
+                        </br>
+                        <div class="custom-control custom-switch">
+                            <input @click="$emit('showOrganizations')" type="checkbox" class="custom-control-input" id="showOrganizationsSwitch">
+                            <label class="custom-control-label" for="showOrganizationsSwitch">Group Organzations</label>
+                        </div>
+                        </br>
+                        <div class="custom-control custom-switch">
+                            <input @click="$emit('showEmptyStates')" type="checkbox" class="custom-control-input" id="showEmptyStatesSwitch">
+                            <label class="custom-control-label" for="showEmptyStatesSwitch">Show Empty States</label>
+                        </div>
+                    </div>
+                    </div>
+                    <state-info-panel></state-info-panel>
+                    <!-- Network Graph Filter/Options Panel -->
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-xl-4 col-lg-5">
+                    <div class="card shadow mb-4">
+                      <!-- Card Header - Dropdown -->
+                      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                          <h6 class="m-0 font-weight-bold text">Terraform Version Drift</h6>
+                      </div>
+                      <!-- Card Body -->
+                      <div class="card-body">
+                        <div class="custom-control custom-switch float-right">
+                          <input @click="$emit('groupByMajorTerraformVersions')" type="checkbox" class="custom-control-input" id="groupMajorVersions">
+                          <label class="custom-control-label" for="groupMajorVersions">Group by Major Versions</label>
+                        </div>
+                          <div class="chart-bar pt-4 pb-2"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                              <canvas id="terraformVersionChart" class="chartjs-render-monitor" data-ol-has-click-handler=""></canvas>
+                          </div>
+                      </div>
+                    </div>
+                    </div>
+                    <div class="col-xl-8 col-lg-8">
+                      <div class="card shadow mb-4">
+                          <!-- Card Header - Dropdown -->
+                          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                              <h6 class="m-0 font-weight-bold text">Resource Types</h6>
+                          </div>
+                          <!-- Card Body -->
+                          <div class="card-body">
+                              <div class="chart-bar pt-4 pb-2"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                                  <canvas id="resourceTypeDistroChart" style="display: block" width="15000" class="chartjs-render-monitor" data-ol-has-click-handler=""></canvas>
+                              </div>
+                          </div>
+                      </div>
+                    </div>
+                  </div>
+                <div class="row">
+                    <div class="col-xl col-lg">
+                      <div class="card shadow mb-4">
+                          <!-- Card Header - Dropdown -->
+                          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                              <h6 class="m-0 font-weight-bold text">Growth</h6>
+                          </div>
+                          <!-- Card Body -->
+                          <div class="card-body">
+                              <div class="chart-bar pt-4 pb-2"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                                  <canvas id="growthChart" style="display: block" width="15000" class="chartjs-render-monitor" data-ol-has-click-handler=""></canvas>
+                              </div>
+                          </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- /.container-fluid -->
+          </div>
+            <!-- End of Main Content -->
+          </div>
+
+          <!-- Footer -->
+          <footer class="sticky-footer bg-white">
+            <div class="container my-auto">
+              <div class="copyright text-center my-auto">
+                <span>Copyright &copy; Terradactyl - Jamie West 2021</span>
+              </div>
+            </div>
+          </footer>
+          <!-- End of Footer -->
+
+        </div>
+        <!-- End of Content Wrapper -->
+
+      </div>
+      <!-- End of Page Wrapper -->
+
+      <!-- Scroll to Top Button-->
+      <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+      </a>
+
+    <!-- Logout -->
+    {% include 'snippets/logout.html' %}
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <!-- Core plugin JavaScript-->
+    <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+    <!-- Custom scripts for all pages-->
+    <script src="{% static 'js/scripts.js' %}"></script>
+
+    <!-- Page level plugins -->
+    <script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
+  </body>
+
+</html>
+
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script>
+  Vue.config.devtools = true
+  {% include "components/state-info-panel.vue" %}
+  Vue.component('dependency-graph', {
+    template:
+  `<div :style="{ position: 'relative' }">
+    <div v-if="loading" id="depGraphLoadingSpinner" class="spinner-border text" role="status" style="position: absolute; margin-left: 50%; margin-top: 16rem; width: 5rem; height: 5rem;">
+    </div>
+    <svg id="dep-graph" width="100%" height="700px">
+    </svg>
+  </div>`,
+    props: ['data'],
+    data() {
+      return {
+        selectedNode: false,
+        groupByTerraformVersion: false,
+        newNetworkSearchValue: '',
+        groupByTerraformMajorVersion: false,
+        showUsageHeatMap: false,
+        showOrganizations: false,
+        showEmptyStates: false,
+        paths: null,
+        centroid: null,
+        hcolours: ['#2e59d9', '#17a673', '#ED461D', '#EDC645', '#E467CF', '#5E9FD4', '#5C5CFF', '#050227', '#EBBC6F', '#F49D37', '#5595B4', '#94CCDB', '#012727', '#4F4940', '#8CE3C0', '#9CDCFC', '#453D52'],
+        tfVersions: {{ charts.terraform_versions.labels|safe }},
+        groupIds: null,
+        loading: true,
+        width: 1024,
+        height: 768,
+        gridSize: 100,
+        selections: {},
+        simulation: null,
+        forceProperties: {
+          center: {
+            x: 0.35,
+            y: 0.35
+          },
+          charge: {
+            enabled: true,
+            strength: -300,
+            distanceMin: 1,
+            distanceMax: 600
+          },
+          collide: {
+            enabled: true,
+            strength: .7,
+            iterations: 1,
+            radius: 35
+          },
+          forceX: {
+            enabled: true,
+            strength: 0.05,
+            x: 0.5
+          },
+          forceY: {
+            enabled: true,
+            strength: 0.35,
+            y: 0.5
+          },
+          link: {
+            enabled: true,
+            distance: 20,
+            iterations: 1
+          }
+        },
+      }
+    },
+    computed: {
+      valueline() {
+          return d3.line()
+            .x(function(d) { return d[0]; })
+            .y(function(d) { return d[1]; })
+            .curve(d3.curveCatmullRomClosed)
+      },
+      innerGridSize() { return this.gridSize / 10 },
+      nodes() { return this.data.nodes },
+      links() { return this.data.links },
+      // These are needed for captions
+      linkTypes() {
+        const linkTypes = []
+        this.links.forEach(link => {
+          if (linkTypes.indexOf(link.type) === -1)
+            linkTypes.push(link.type)
+        })
+        return linkTypes.sort()
+      },
+      classes() {
+        const classes = []
+        this.nodes.forEach(node => {
+          if (classes.indexOf(node.class) === -1)
+            classes.push(node.class)
+        })
+        return classes.sort()
+      },
+      majorTerraformVersions() {
+        const majorTerraformVersions = []
+        for (var i = 0; i < this.tfVersions.length; i++) {
+          const majorVersion = this.tfVersions[i].split(".")[0] + '.' + this.tfVersions[i].split(".")[1];
+          if(majorTerraformVersions.indexOf(majorVersion) == -1) {
+            majorTerraformVersions.push(majorVersion)
+          }
+        }
+        return majorTerraformVersions
+      }
+    },
+    created() {
+      this.width = window.innerWidth - 10
+      this.height = window.innerHeight - 110
+
+      this.simulation = d3.forceSimulation()
+        .force("link", d3.forceLink())
+        .force("charge", d3.forceManyBody())
+        .force("collide", d3.forceCollide())
+        .force("center", d3.forceCenter())
+        .force("forceX", d3.forceX())
+        .force("forceY", d3.forceY())
+        .on("tick", this.tick)
+      // Call first time to setup default values
+      this.updateForces()
+    },
+    mounted() {
+      this.selections.svg = d3.select(this.$el.querySelector("svg"))
+      const svg = this.selections.svg
+
+      // Define the arrow marker
+      svg.append("svg:defs").selectAll("marker")
+            .data(["end"])     // Different link/path types can be defined here
+          .enter().append("svg:marker")    // This section adds in the arrows
+            .attr("id", String)
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 43)              // Prevents arrowhead from being covered by circle
+            .attr("refY", 0)
+            .attr("markerWidth", 2)
+            .attr("markerHeight", 2)
+            .attr("orient", "auto")
+          .append("svg:path")
+            .attr("d", "M0,-5L10,0L0,5");
+
+      // Define arrow for self-links
+      svg.append("svg:defs").selectAll("marker")
+            .data(["end-self"])
+          .enter().append("svg:marker")    // This section adds in the arrows
+            .attr("id", String)
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 40)
+            .attr("refY", -15)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", 285)
+          .append("svg:path")
+            .attr("d", "M0,-5L10,0L0,5");
+
+      // Add zoom
+      svg.call(d3.zoom()
+          .scaleExtent([1 / 4, 4])
+          .on('zoom', this.zoomed))
+
+      this.selections.graph = svg.append("g")
+      this.selections.links = this.selections.graph.append("g").attr('class', 'links');
+      this.selections.groups = this.selections.graph.append("g").attr('class', 'groups');
+      this.selections.nodes = this.selections.graph.append("g").attr('class', 'nodes');
+
+      // Handle search filter
+      this.$root.$on('newNetworkSearchValue', data => {
+        this.newNetworkSearchValue = data
+        this.tick()
+      });
+
+      // Handle terraform version grouping.
+      this.$root.$on('groupByTerraformVersion', data => {
+        this.groupByTerraformVersion = !this.groupByTerraformVersion
+        this.tick()
+      });
+
+      // Handle terraform major version grouping.
+      this.$root.$on('groupByMajorTerraformVersions', data => {
+        this.groupByTerraformMajorVersion = !this.groupByTerraformMajorVersion
+        this.tick()
+      });
+
+      // Handle heatmap switch
+      this.$root.$on('showUsageHeatMap', data => {
+        this.showUsageHeatMap = !this.showUsageHeatMap
+        this.tick()
+      });
+
+      // Handle group by organizations
+      this.$root.$on('showOrganizations', data => {
+        this.showOrganizations = !this.showOrganizations
+        this.tick()
+      })
+
+      // Handle show empty States
+      this.$root.$on('showEmptyStates', data => {
+        this.showEmptyStates = !this.showEmptyStates
+        this.tick()
+      })
+    },
+    methods: {
+      pSBC(p,c0,c1,l) {
+        // https://stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color-or-rgb-and-blend-colors
+        let r,g,b,P,f,t,h,i=parseInt,m=Math.round,a=typeof(c1)=="string";
+        if(typeof(p)!="number"||p<-1||p>1||typeof(c0)!="string"||(c0[0]!='r'&&c0[0]!='#')||(c1&&!a))return null;
+        if(!this.pSBCr)this.pSBCr=(d)=>{
+            let n=d.length,x={};
+            if(n>9){
+                [r,g,b,a]=d=d.split(","),n=d.length;
+                if(n<3||n>4)return null;
+                x.r=i(r[3]=="a"?r.slice(5):r.slice(4)),x.g=i(g),x.b=i(b),x.a=a?parseFloat(a):-1
+            }else{
+                if(n==8||n==6||n<4)return null;
+                if(n<6)d="#"+d[1]+d[1]+d[2]+d[2]+d[3]+d[3]+(n>4?d[4]+d[4]:"");
+                d=i(d.slice(1),16);
+                if(n==9||n==5)x.r=d>>24&255,x.g=d>>16&255,x.b=d>>8&255,x.a=m((d&255)/0.255)/1000;
+                else x.r=d>>16,x.g=d>>8&255,x.b=d&255,x.a=-1
+            }return x};
+        h=c0.length>9,h=a?c1.length>9?true:c1=="c"?!h:false:h,f=this.pSBCr(c0),P=p<0,t=c1&&c1!="c"?this.pSBCr(c1):P?{r:0,g:0,b:0,a:-1}:{r:255,g:255,b:255,a:-1},p=P?p*-1:p,P=1-p;
+        if(!f||!t)return null;
+        if(l)r=m(P*f.r+p*t.r),g=m(P*f.g+p*t.g),b=m(P*f.b+p*t.b);
+        else r=m((P*f.r**2+p*t.r**2)**0.5),g=m((P*f.g**2+p*t.g**2)**0.5),b=m((P*f.b**2+p*t.b**2)**0.5);
+        a=f.a,t=t.a,f=a>=0||t>=0,a=f?a<0?t:t<0?a:a*P+t*p:0;
+        if(h)return"rgb"+(f?"a(":"(")+r+","+g+","+b+(f?","+m(a*1000)/1000:"")+")";
+        else return"#"+(4294967296+r*16777216+g*65536+b*256+(f?m(a*255):0)).toString(16).slice(1,f?undefined:-2)
+      },
+      polygonGenerator(groupId) {
+          var node_coords = this.nodes
+            .filter(function(d) { return d['organization'] === groupId; })
+            .map(function(d) { return [d.x, d.y]; });
+          return d3.polygonHull(node_coords);
+      },
+      tick() {
+        // If no data is passed to the Vue component, do nothing
+        if (!this.data) { return }
+        this.loading = false;
+
+        const graph = this.selections.graph
+        const nodes = this.selections.nodes
+        const links = this.selections.links
+        const groups = this.selections.groups
+        var vc = this
+
+        const transform = d => {
+          return "translate(" + d.x + "," + d.y + ")"
+        }
+
+        const link = d => {
+          // Self-link support
+          if (d.source.index === d.target.index) {
+            return `M${d.source.x-1},${d.source.y-1}A30,30 -10,1,0 ${d.target.x+1},${d.target.y+1}`;
+          } else {
+            return "M" + d.source.x + "," + d.source.y + " L" + d.target.x + "," + d.target.y;
+          }
+        }
+        links.selectAll("path").attr("d", link)
+        nodes.selectAll("circle").attr("transform", transform)
+        nodes.selectAll("text").attr("transform", transform)
+        groups.selectAll("groups").attr("transform", transform)
+        nodes.selectAll("circle").style("stroke", function(d) {
+          if(vc.groupByTerraformVersion) {
+            // Return colour based on full TF Version
+            if(vc.groupByTerraformMajorVersion) {
+              // Return colour based on major TF Version only
+              const majorVersion = d['terraform_version'].split(".")[0] + '.' + d['terraform_version'].split(".")[1]
+              const colour = vc.hcolours[vc.majorTerraformVersions.indexOf(majorVersion)]
+              return colour
+            } else {
+              return vc.hcolours[vc.tfVersions.indexOf(d['terraform_version'])]
+            }
+          } else if(vc.showUsageHeatMap) {
+            // Return colour based on state usage
+            return vc.pSBC(parseFloat(d['heatmap_p']), '#5BC0EB', '#F06543', true)
+          } else if (vc.showEmptyStates) {
+            return d['resource_count'] > 0 ? '#5BC0EB' : '#98A3AE'
+          } else {
+            // Return default node colour
+            return '#5BC0EB'
+          }
+        }).attr("r", function(d) {
+          return vc.showUsageHeatMap ? 5 + (25 * d['heatmap_p']) : 5 // Multiply by 10 to bring the sizing up. Makes a bigger impact in the heatmap.
+        }).style("fill", function(d) {
+          if(vc.showUsageHeatMap) {
+            const heatColour = vc.pSBC(parseFloat(d['heatmap_p']), '#5BC0EB', '#F06543', true)
+            return vc.pSBC(0.40, heatColour, false, true)
+          } else if(vc.showEmptyStates) {
+            return d['resource_count'] <= 0 ? vc.pSBC(0.60, '#98A3AE', false, true) : '#fff'
+          } else {
+            return "#fff"
+          }
+        }).classed("searched", function(d) {
+          if(vc.newNetworkSearchValue.length > 0) {
+            return d['name'].includes(vc.newNetworkSearchValue)
+          } else {
+            return false
+          }
+        })
+
+        paths = groups.selectAll('path')
+        this.groupIds.forEach(function(groupId) {
+          var path = paths.filter(function(d) { return d === groupId; })
+            .attr('transform', 'scale(1) translate(0,0)')
+            .attr('d', function(d) {
+              polygon = vc.polygonGenerator(d);
+              vc.centroid = d3.polygonCentroid(polygon);
+              // to scale the shape properly around its points:
+              // move the 'g' element to the centroid point, translate
+              // all the path around the center of the 'g' and then
+              // we can scale the 'g' element properly
+              return vc.valueline(
+                polygon.map(function(point) {
+                  return [  point[0] - vc.centroid[0], point[1] - vc.centroid[1] ];
+                })
+              );
+            })
+          d3.select(path.node().parentNode).attr('transform', 'translate('  + vc.centroid[0] + ',' + (vc.centroid[1]) + ') scale(' + '1.05' + ')');
+        });
+
+        paths.style('stroke', function(d) { 
+            var c_index = vc.groupIds.indexOf(d)
+            return vc.hcolours[c_index]
+           })
+          .style('stroke-opacity', function(d) {
+            return vc.showOrganizations ? 1 : 0
+          })
+          .style('fill', function(d) { 
+            var c_index = vc.groupIds.indexOf(d)
+            return vc.hcolours[c_index]
+           })
+          .style('fill-opacity', function(d) {
+            return vc.showOrganizations ? 0.1 : 0
+          });
+
+      },
+      updateData() {
+        this.simulation.nodes(this.nodes)
+        this.simulation.force("link").links(this.links)
+
+        const simulation = this.simulation
+        const graph = this.selections.graph
+        const nodes = this.selections.nodes
+        const links = this.selections.links
+        const groups = this.selections.groups
+        const vc = this
+
+        // Links should only exit if not needed anymore
+        links.selectAll("path")
+          .data(this.links)
+        .exit().remove()
+
+        links.selectAll("path")
+          .data(this.links)
+        .enter().append("path")
+          .attr("class", d => "link " + d.type)
+
+
+        // Get organizations for grouping
+        var groupIds = d3.set()
+        this.nodes.forEach(function(d) { 
+            groupIds.add(d['organization'])
+        })
+        // Remove any with less than 3 nodes (can't draw the convex hull for less than 3 points)
+        this.groupIds = groupIds.values().map(function(groupId) {
+          return {
+            groupId: groupId,
+            count: vc.nodes.filter(function(d) { return d['organization'] === groupId }).length
+          }
+        }).filter(function(g) { return g.count > 2; }).map( function(g) { return g.groupId; });
+
+        this.paths = groups.selectAll('.path_placeholder')
+          .data(this.groupIds, function(d) { return d; })
+          .enter()
+          .append('g')
+          .attr('class', 'path_placeholder')
+          .append('path')
+          .style('stroke', function(d) { 
+            console.log(d)
+            var c_index = vc.groupIds.indexOf(d)
+            return vc.hcolours[c_index]
+           })
+          .style('stroke-opacity', function(d) {
+            return vc.showOrganizations ? 1 : 0
+          })
+          .style('fill', function(d) { 
+            var c_index = vc.groupIds.indexOf(d)
+            return vc.hcolours[c_index]
+           })
+          .style('fill-opacity', function(d) {
+            return vc.showOrganizations ? 0.1 : 0
+          });
+
+        {% comment %} this.paths
+          .transition()
+          .duration(2000)
+          .attr('opacity', 1); {% endcomment %}
+
+        // Nodes should always be redrawn to avoid lines above them
+        nodes.selectAll("circle").remove()
+        nodes.selectAll("circle")
+          .data(this.nodes)
+        .enter().append("circle")
+          .attr("r", 5)
+          .attr("class", d => d.class)
+          .call(d3.drag()
+            .on('start', this.nodeDragStarted)
+            .on('drag', this.nodeDragged)
+            .on('end', this.nodeDragEnded))
+          .on('mouseover', this.nodeMouseOver)
+          .on('mouseout', this.nodeMouseOut)
+          .on('click', this.nodeClick)
+
+        // Add 'marker-end' attribute to each path
+        const svg = d3.select(this.$el.querySelector("svg"))
+        svg.selectAll("g").selectAll("path").attr("marker-end", d => {
+          // Caption items doesn't have source and target
+          if (d.source && d.target &&
+            d.source.index === d.target.index) return "url(#end-self)";
+          else return "url(#end)";
+        });
+
+        simulation.alpha(1).restart()
+      },
+      updateForces() {
+        const { simulation, forceProperties, width, height } = this
+        simulation.force("center")
+        .x(width * forceProperties.center.x)
+        .y(height * forceProperties.center.y)
+        simulation.force("charge")
+          .strength(forceProperties.charge.strength * forceProperties.charge.enabled)
+          .distanceMin(forceProperties.charge.distanceMin)
+          .distanceMax(forceProperties.charge.distanceMax)
+        simulation.force("collide")
+          .strength(forceProperties.collide.strength * forceProperties.collide.enabled)
+          .radius(forceProperties.collide.radius)
+          .iterations(forceProperties.collide.iterations)
+        simulation.force("forceX")
+          .strength(forceProperties.forceX.strength * forceProperties.forceX.enabled)
+          .x(width * forceProperties.forceX.x)
+        simulation.force("forceY")
+          .strength(forceProperties.forceY.strength * forceProperties.forceY.enabled)
+          .y(height * forceProperties.forceY.y)
+        simulation.force("link")
+          .distance(forceProperties.link.distance)
+          .iterations(forceProperties.link.iterations)
+
+        // updates ignored until this is run
+        // restarts the simulation (important if simulation has already slowed down)
+        simulation.alpha(1).restart()
+      },
+      zoomed() {
+        const transform = d3.event.transform
+        // The trick here is to move the grid in a way that the user doesn't perceive
+        // that the axis aren't really moving
+        // The actual movement is between 0 and gridSize only for x and y
+        const translate = transform.x % (this.gridSize * transform.k) + ',' +
+          transform.y % (this.gridSize * transform.k)
+        this.selections.graph.attr('transform', transform)
+
+        // Define some world boundaries based on the graph total size
+        // so we don't scroll indefinitely
+        const graphBox = this.selections.graph.node().getBBox()
+        const margin = 200
+        const worldTopLeft = [graphBox.x - margin, graphBox.y - margin]
+        const worldBottomRight = [
+          graphBox.x + graphBox.width + margin,
+          graphBox.y + graphBox.height + margin
+        ]
+      },
+      nodeDragStarted(d) {
+        if (!d3.event.active) { this.simulation.alphaTarget(0.3).restart() }
+        d.fx = d.x
+        d.fy = d.y
+      },
+      nodeDragged(d) {
+        d.fx = d3.event.x
+        d.fy = d3.event.y
+      },
+      nodeDragEnded(d) {
+        if (!d3.event.active) { this.simulation.alphaTarget(0.0001) }
+        d.fx = null
+        d.fy = null
+      },
+      nodeMouseOver(d) {
+        if(!this.selectedNode) {
+          const circle = this.selections.nodes.selectAll("circle")
+          circle.classed('hovered', false)
+          circle.filter((td) => td === d)
+            .classed('hovered', true)
+
+          this.$root.$emit('nodeHover', d)
+        }
+      },
+      nodeMouseOut(d) {
+      },
+      nodeClick(d) {
+        const circle = this.selections.nodes.selectAll("circle")
+        circle.classed('hovered', false)
+
+        if(!this.selectedNode) {
+          // If no selected node. Select this one.
+          this.selectedNode = d;
+          circle.filter((td) => td === d)
+            .classed('hovered', false)
+            .classed('selected', true)
+        } else {
+          // Check if the node selected is the currently selected.
+          if(d == this.selectedNode) {
+            // Unpin the selected node.
+            circle.filter((td) => td === d)
+              .classed('hovered', true)
+              .classed('selected', false)
+            this.selectedNode = false
+          } else {
+            this.selectedNode = d
+            circle.classed('selected', false)
+            circle.filter((td) => td === d)
+              .classed('hovered', false)
+              .classed('selected', true)
+          }
+        }
+
+        this.$root.$emit('nodeClick', d)
+      },
+    },
+    watch: {
+      data: {
+        handler(newData) {
+          this.updateData()
+        },
+        deep: true
+      },
+      forceProperties: {
+        handler(newForce) {
+          this.updateForces()
+        },
+        deep: true
+      }
+    }
+  })
+
+  new Vue({
+    el: '#app',
+    delimiters: ["[[", "]]"],
+    data() {
+      return {
+        data: null,
+        stateName: 'None',
+        newNetworkSearchValue: null,
+        state: '',
+        dataList: ['api/v1/states'],
+        groupByTerraformMajorVersion: false,
+        terraformVersionPieChart: null,
+        hcolours: ['#2e59d9', '#17a673', '#ED461D', '#EDC645', '#E467CF', '#5E9FD4', '#5C5CFF', '#050227', '#EBBC6F', '#f59f3d', '#5595B4', '#94CCDB', '#012727', '#4F4940', '#8CE3C0', '#9CDCFC', '#453D52'],
+        bcolours: ['#4e73df', '#1cc88a', '#F06543', '#F0CF65', '#EA88DA', '#7EB2DD', '#7F7EFF', '#090446', '#EFC88B', '#f38c16', '#6EA4BF', '#A8D5E2', '#034748', '#60594D', '#A1E8CC', '#BCE7FD', '#574D68']
+      }
+    },
+    mounted() {
+      this.changeData();
+      this.loadCharts();
+
+      // Handle terraform major version grouping.
+      this.$root.$on('groupByMajorTerraformVersions', data => {
+        this.groupByTerraformMajorVersion = !this.groupByTerraformMajorVersion
+        this.refreshTerraformVersionChart()
+      });
+    },
+    watch: {
+      newNetworkSearchValue: {
+        handler(newNetworkSearchValue) {
+          this.$root.$emit('newNetworkSearchValue', this.newNetworkSearchValue)
+        }
+      }
+    },
+    methods: {
+      changeData() {
+        const dataIndex = Math.floor(Math.random() * this.dataList.length)
+        d3.json(this.dataList[dataIndex]).then(data => {
+          this.data = data
+        }).catch(error => {
+          console.error('Cannot proceed with simulation, failed to  retrieve data.')
+        })
+      },
+      networkSearchChange: function(event) {
+        console.log(event.target.value);
+      },
+      refreshTerraformVersionChart() {
+        var tvrhcolours = []
+        var tvrbcolours = []
+
+        for (var i = 0; i < {{ charts.terraform_versions.labels|length }}; i++) {
+          tvrhcolours.push(this.hcolours[i % this.hcolours.length])
+          tvrbcolours.push(this.bcolours[i % this.bcolours.length])
+        }
+
+        var chartLabels = {{ charts.terraform_versions.labels|safe }}
+        var chartData = {{ charts.terraform_versions.data|safe }}
+
+        if(this.groupByTerraformMajorVersion) {
+          tempChartData = []
+          tempChartLabels = []
+          for (var i = 0; i < chartLabels.length; i++) {
+            const majorVersion = chartLabels[i].split(".")[0] + '.' + chartLabels[i].split(".")[1]; // returns : 0.12, 0.13 etc
+            if(tempChartLabels.indexOf(majorVersion) == -1) {
+              tempChartLabels.push(majorVersion)
+            }
+            const di = tempChartLabels.indexOf(majorVersion)
+            if(tempChartData[di] != undefined) {
+              tempChartData[di] = tempChartData[di] + parseInt(chartData[i]) // Add this minor count to the major count
+            } else {
+              tempChartData[di] = parseInt(chartData[i])
+            }
+          }
+          chartLabels = tempChartLabels
+          chartData = tempChartData
+        }
+
+        this.terraformVersionPieChart.data.labels.pop();
+        this.terraformVersionPieChart.data.labels = chartLabels
+        this.terraformVersionPieChart.data.datasets[0].data = chartData
+        this.terraformVersionPieChart.update()
+
+      },
+      loadTerraformVersionChart() {
+        var tvrhcolours = []
+        var tvrbcolours = []
+
+        for (var i = 0; i < {{ charts.terraform_versions.labels|length }}; i++) {
+          tvrhcolours.push(this.hcolours[i % this.hcolours.length])
+          tvrbcolours.push(this.bcolours[i % this.bcolours.length])
+        }
+
+        var chartLabels = {{ charts.terraform_versions.labels|safe }}
+        var chartData = {{ charts.terraform_versions.data|safe }}
+
+        if(this.groupByTerraformMajorVersion) {
+          tempChartData = []
+          tempChartLabels = []
+          for (var i = 0; i < chartLabels.length; i++) {
+            const majorVersion = chartLabels[i].split(".")[0] + '.' + chartLabels[i].split(".")[1]; // returns : 0.12, 0.13 etc
+            if(tempChartLabels.indexOf(majorVersion) == -1) {
+              tempChartLabels.push(majorVersion)
+            }
+            const di = tempChartLabels.indexOf(majorVersion)
+            if(tempChartData[di] != undefined) {
+              tempChartData[di] = tempChartData[di] + parseInt(chartData[i]) // Add this minor count to the major count
+            } else {
+              tempChartData[di] = parseInt(chartData[i])
+            }
+          }
+          chartLabels = tempChartLabels
+          chartData = tempChartData
+        }
+
+        // Set new default font family and font color to mimic Bootstrap's default styling
+        Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+        Chart.defaults.global.defaultFontColor = '#858796';
+
+        // Terraform Version Distribution
+        var ctx = document.getElementById("terraformVersionChart");
+        this.terraformVersionPieChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: chartLabels,
+            datasets: [{
+              data: chartData,
+              backgroundColor: tvrbcolours,
+              hoverBackgroundColor: tvrhcolours,
+              hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+          },
+          options: {
+            maintainAspectRatio: false,
+            tooltips: {
+              backgroundColor: "rgb(255,255,255)",
+              bodyFontColor: "#858796",
+              borderColor: '#dddfeb',
+              borderWidth: 1,
+              xPadding: 15,
+              yPadding: 15,
+              displayColors: false,
+              caretPadding: 10,
+            },
+            legend: {
+              display: true,
+              position: 'right'
+            },
+            cutoutPercentage: 80,
+          },
+        });
+      },
+      loadResourceTypeChart() {
+        var rtrhcolours = []
+        var rtrbcolours = []
+        const chartData = {{ charts.resource_distribution.data|safe }}
+        const chartLabels = {{ charts.resource_distribution.labels|safe }}
+        const maxY = Math.max(...chartData)
+
+        var ctx = document.getElementById("resourceTypeDistroChart");
+        var resourceTypeBarChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: chartLabels,
+            datasets: [{
+              label: "Count",
+              backgroundColor: "#D4C9F8",
+              hoverBackgroundColor: "#491DD7",
+              borderColor: "#623CE4",
+              data: chartData
+            }],
+          },
+          options: {
+            maintainAspectRatio: false,
+            layout: {
+              padding: {
+                left: 10,
+                right: 25,
+                top: 25,
+                bottom: 0
+              }
+            },
+            scales: {
+              xAxes: [{
+                gridLines: {
+                  display: false,
+                  drawBorder: false
+                },
+                ticks: {
+                  maxTicksLimit: 6,
+                  display: false
+                },
+                maxBarThickness: 25,
+              }],
+              yAxes: [{
+                ticks: {
+                  min: 0,
+                  max: maxY,
+                  maxTicksLimit: 5,
+                  padding: 10
+                },
+                gridLines: {
+                  color: "rgb(234, 236, 244)",
+                  zeroLineColor: "rgb(234, 236, 244)",
+                  drawBorder: false,
+                  borderDash: [2],
+                  zeroLineBorderDash: [2]
+                }
+              }],
+            },
+            legend: {
+              display: false
+            },
+            tooltips: {
+              titleMarginBottom: 10,
+              titleFontColor: '#6e707e',
+              titleFontSize: 14,
+              backgroundColor: "rgb(255,255,255)",
+              bodyFontColor: "#858796",
+              borderColor: '#dddfeb',
+              borderWidth: 1,
+              xPadding: 15,
+              yPadding: 15,
+              displayColors: false,
+              caretPadding: 10,
+            },
+          }
+        });
+      },
+
+      loadGrowthChart() {
+        var rtrhcolours = []
+        var rtrbcolours = []
+        const chartData = {{ charts.growth.data|safe }}
+        const chartLabels = {{ charts.growth.labels|safe }}
+        const maxY = Math.max(...chartData)
+
+        var ctx = document.getElementById("growthChart");
+        var resourceTypeBarChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: chartLabels,
+            datasets: [{
+              label: "Count",
+              backgroundColor: "#D4C9F8",
+              hoverBackgroundColor: "#491DD7",
+              borderColor: "#623CE4",
+              data: chartData
+            }],
+          },
+          options: {
+            maintainAspectRatio: false,
+            layout: {
+              padding: {
+                left: 10,
+                right: 25,
+                top: 25,
+                bottom: 0
+              }
+            },
+            scales: {
+              xAxes: [{
+                gridLines: {
+                  display: false,
+                  drawBorder: false
+                },
+                ticks: {
+                  maxTicksLimit: 6,
+                  display: true
+                },
+                maxBarThickness: 25,
+              }],
+              yAxes: [{
+                ticks: {
+                  min: 0,
+                  max: maxY,
+                  maxTicksLimit: 5,
+                  padding: 10
+                },
+                gridLines: {
+                  color: "rgb(234, 236, 244)",
+                  zeroLineColor: "rgb(234, 236, 244)",
+                  drawBorder: false,
+                  borderDash: [2],
+                  zeroLineBorderDash: [2]
+                }
+              }],
+            },
+            legend: {
+              display: false
+            },
+            tooltips: {
+              titleMarginBottom: 10,
+              titleFontColor: '#6e707e',
+              titleFontSize: 14,
+              backgroundColor: "rgb(255,255,255)",
+              bodyFontColor: "#858796",
+              borderColor: '#dddfeb',
+              borderWidth: 1,
+              xPadding: 15,
+              yPadding: 15,
+              displayColors: false,
+              caretPadding: 10,
+            },
+          }
+        });
+      },
+      loadCharts() {
+        this.loadTerraformVersionChart()
+        this.loadResourceTypeChart()
+        this.loadGrowthChart()
+      }
+    }
+  })
+</script>

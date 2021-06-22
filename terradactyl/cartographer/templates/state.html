@@ -1,0 +1,1375 @@
+{% load static %}
+{% load humanize %}
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1,
+      shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Terradactyl - Workspace View</title>
+
+    <!-- Custom fonts for this template-->
+    <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}"
+      rel="stylesheet" type="text/css">
+    <link
+      href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+      rel="stylesheet">
+
+    <!-- Custom styles for this template-->
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <link href="{% static 'css/d3-styles.css' %}" rel="stylesheet">
+
+  </head>
+
+  <body id="page-top">
+    <div id="app">
+      <!-- Page Wrapper -->
+      <div id="wrapper">
+
+        <!-- Sidebar -->
+        {% include 'snippets/sidebar.html' %}
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+          <!-- Main Content -->
+          <div id="content">
+
+            <!-- Topbar -->
+            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4
+              static-top shadow">
+
+              <!-- Sidebar Toggle (Topbar) -->
+              <button id="sidebarToggleTop" class="btn btn-link d-md-none
+                rounded-circle mr-3">
+                <i class="fa fa-bars"></i>
+              </button>
+
+              <!-- Topbar Navbar -->
+              <ul class="navbar-nav ml-auto">
+
+                <!-- Nav Item - Search Dropdown (Visible Only XS) -->
+                <li class="nav-item dropdown no-arrow d-sm-none">
+                  <a class="nav-link dropdown-toggle" href="#"
+                    id="searchDropdown"
+                    role="button"
+                    data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                    <i class="fas fa-search fa-fw"></i>
+                  </a>
+                  <!-- Dropdown - Messages -->
+                  <div class="dropdown-menu dropdown-menu-right p-3 shadow
+                    animated--grow-in"
+                    aria-labelledby="searchDropdown">
+                    <form class="form-inline mr-auto w-100 navbar-search">
+                      <div class="input-group">
+                        <input type="text" class="form-control bg-light border-0
+                          small"
+                          placeholder="Search for..." aria-label="Search"
+                          aria-describedby="basic-addon2">
+                        <div class="input-group-append">
+                          <button class="btn btn-primary" type="button">
+                            <i class="fas fa-search fa-sm"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </li>
+
+                <div class="topbar-divider d-none d-sm-block"></div>
+
+                <!-- Nav Item - User Information -->
+                <li class="nav-item dropdown no-arrow">
+                  <a class="nav-link dropdown-toggle" href="#" id="userDropdown"
+                    role="button"
+                    data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                    <span class="mr-2 d-none d-lg-inline text-gray-600 small">Jamie
+                      West</span>
+                  </a>
+                  <!-- Dropdown - User Information -->
+                  <div class="dropdown-menu dropdown-menu-right shadow
+                    animated--grow-in"
+                    aria-labelledby="userDropdown">
+                    <a class="dropdown-item" href="#">
+                      <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                      Profile
+                    </a>
+                    <a class="dropdown-item" href="#">
+                      <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                      Settings
+                    </a>
+                    <a class="dropdown-item" href="#">
+                      <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
+                      Activity Log
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" data-toggle="modal"
+                      data-target="#logoutModal">
+                      <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2
+                        text-gray-400"></i>
+                      Logout
+                    </a>
+                  </div>
+                </li>
+
+              </ul>
+
+            </nav>
+            <!-- End of Topbar -->
+            <div id="syncAlertPlaceholder">
+
+            </div>
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+              <!-- Page Heading -->
+              <div class="d-sm-flex align-items-center justify-content-between
+                mb-4">
+                <h1 class="h3 mb-0 text-gray-800">{{ state_name }}</h1>
+              </div>
+              <!-- Content Row -->
+              <div class="row">
+                <!-- Total States -->
+                <div class="col-xl-2 col-md-6 mb-4">
+                    <div class="card border-left shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                        Created</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.created_at }} </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-baby fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-2 col-md-6 mb-4">
+                    <div class="card border-left shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                        Latest Apply</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.latest_apply }} </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-play fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-2 col-md-6 mb-4">
+                    <div class="card border-left shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                        State Revisions</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.revision_count }} </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-history fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-2 col-md-6 mb-4">
+                    <div class="card border-left shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                        Total Resources</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.resource_count }} </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-box fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-2 col-md-6 mb-4">
+                    <div class="card border-left shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                        Last Synced</div>
+                                    <div v-model="infoLastSynced" class="h5 mb-0 font-weight-bold text-gray-800">[[ infoLastSynced ]]</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-clock fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg">
+                    <div class="card shadow mb-4 border-bottom">
+                      <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-info">
+                          <i class="fas fa-play mr-1"></i>
+                          Apply Order</h6>
+                      </div>
+                      <div class="card-body">
+                        <run-order-graph :data="rodata" :state="state"></run-order-graph>
+                      </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <!-- Network Graph -->
+                <div class="col-lg">
+                  <div class="card shadow mb">
+                    <div class="card-header py-3">
+                      <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-project-diagram mr-1"></i>
+                        State Network</h6>
+                    </div>
+                    <div class="card-body">
+                      <dependency-graph :data="data" :nodeSelected="nodeSelected" :state="state"></dependency-graph>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-3">
+                  <!-- Network Graph Info Panel-->
+                    <div class="card shadow mb-4 border-bottom">
+                      <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text"><i class="fas fa-sliders-h mr-1"></i>Control Panel</h6>
+                      </div>
+                      <div class="card-body">
+                            <button @click="syncState" class="btn btn-primary btn-icon-split" style="margin-bottom: .4rem;">
+                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-sync-alt"></i></span>
+                                <span class="text">Synchronize State</span>
+                            </button>
+                            </br>
+                            <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#downstreamsReportModal">
+                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-file-alt"></i></span>
+                                <span class="text">Downstreams Report</span>
+                            </button>
+                            <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#upstreamsReportModal">
+                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-file-alt"></i></span>
+                                <span class="text">Upstreams Report</span>
+                            </button>
+                      </div>
+                    </div>
+                  <state-info-panel></state-info-panel>
+                </div>
+              </div>
+
+              <!-- Downstream Dependencies Modal -->
+              <div class="modal fade" id="downstreamsReportModal" tabindex="-1" role="dialog" aria-labelledby="downstreamsReportModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="downstreamsReportModalLabel">Downstream Dependencies</h5>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <table class="table">
+                        <thead>
+                          <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Required</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for dep in downstream_dependencies %}
+                          <tr>
+                            <th scope="row">{{ forloop.counter }}</th>
+                            <td>{{dep.name}}</td>
+                            <td>{{dep.required}}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                      <button type="button" class="btn btn-primary">Save changes</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- End Downstream Dependencies Modal -->
+              <!-- Start Upstream Dependencies Modal -->
+              <div class="modal fade" id="upstreamsReportModal" tabindex="-1" role="dialog" aria-labelledby="upstreamsReportModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="upstreamsReportModalLabel">Upstream Dependencies</h5>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <table class="table">
+                        <thead>
+                          <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Required</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for dep in upstream_dependencies %}
+                          <tr>
+                            <th scope="row">{{ forloop.counter }}</th>
+                            <td>{{dep.name}}</td>
+                            <td>{{dep.required}}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                      <button type="button" class="btn btn-primary">Save changes</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- End Upstream Dependencies Modal -->
+                <div class="row">
+                    <div class="col-xl col-lg" style="margin-top: 1.5rem">
+                      <div class="card shadow mb-4">
+                          <!-- Card Header - Dropdown -->
+                          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                              <h6 class="m-0 font-weight-bold text">Growth</h6>
+                          </div>
+                          <!-- Card Body -->
+                          <div class="card-body">
+                              <div class="chart-bar pt-4 pb-2"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                                  <canvas id="growthChart" style="display: block" width="15000" class="chartjs-render-monitor" data-ol-has-click-handler=""></canvas>
+                              </div>
+                          </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-xl col-lg">
+                      <div class="card shadow mb-4">
+                          <!-- Card Header - Dropdown -->
+                          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                              <h6 class="m-0 font-weight-bold text">Resource Types</h6>
+                          </div>
+                          <!-- Card Body -->
+                          <div class="card-body">
+                              <div class="chart-bar pt-4 pb-2"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                                  <canvas id="resourceTypeDistroChart" style="display: block" width="15000" class="chartjs-render-monitor" data-ol-has-click-handler=""></canvas>
+                              </div>
+                          </div>
+                      </div>
+                    </div>
+                    </div>
+              </div>
+              <!-- /.container-fluid -->
+            </div>
+            <!-- End of Main Content -->
+          </div>
+          </div>
+
+          <!-- Footer -->
+          <footer class="sticky-footer bg-white">
+            <div class="container my-auto">
+              <div class="copyright text-center my-auto">
+                <span>Copyright &copy; Terradactyl - Jamie West 2021</span>
+              </div>
+            </div>
+          </footer>
+          <!-- End of Footer -->
+
+        </div>
+        <!-- End of Content Wrapper -->
+
+      </div>
+      <!-- End of Page Wrapper -->
+
+      <!-- Scroll to Top Button-->
+      <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+      </a>
+
+    <!-- Logout -->
+    {% include 'snippets/logout.html' %}
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <!-- Core plugin JavaScript-->
+    <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+    <!-- Custom scripts for all pages-->
+    <script src="{% static 'js/scripts.js' %}"></script>
+
+    <!-- Page level plugins -->
+    <script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
+  </body>
+{% csrf_token %}
+</html>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+  Vue.config.devtools = true
+  {% include "components/state-info-panel.vue" %}
+  {% include "components/run-order-d3-graph.vue" %}
+  Vue.component('dependency-graph', {
+    template:
+    `<div :style="{ position: 'relative' }">
+      <svg id="dep-graph" width="100%" height="700px">
+      </svg>
+    </div>`,
+    props: ['data', 'nodeSelected', 'state'],
+    data() {
+      return {
+        width: 1024,
+        height: 768,
+        selections: {},
+        simulation: null,
+        forceProperties: {
+          center: {
+            x: 0.35,
+            y: 0.3
+          },
+          charge: {
+            enabled: true,
+            strength: -20000,
+            distanceMin: 1,
+            distanceMax: 20000
+          },
+          collide: {
+            enabled: true,
+            strength: .7,
+            iterations: 1,
+            radius: 30
+          },
+          forceX: {
+            enabled: true,
+            strength: 0.05,
+            x: 0.5
+          },
+          forceY: {
+            enabled: true,
+            strength: 0.35,
+            y: 0.5
+          },
+          link: {
+            enabled: true,
+            distance: 100,
+            iterations: 1
+          }
+        },
+      }
+    },
+    computed: {
+      nodes() { return this.data.nodes },
+      links() { return this.data.links },
+      // These are needed for captions
+      linkTypes() {
+        const linkTypes = []
+        this.links.forEach(link => {
+          if (linkTypes.indexOf(link.type) === -1)
+            linkTypes.push(link.type)
+        })
+        return linkTypes.sort()
+      },
+      classes() {
+        const classes = []
+        this.nodes.forEach(node => {
+          if (classes.indexOf(node.class) === -1)
+            classes.push(node.class)
+        })
+        return classes.sort()
+      },
+    },
+    created() {
+      // You can set the component width and height in any way
+      // you prefer. It's responsive! :)
+      this.width = window.innerWidth - 10
+      this.height = window.innerHeight - 110
+
+      this.simulation = d3.forceSimulation()
+        .force("link", d3.forceLink())
+        .force("charge", d3.forceManyBody())
+        .force("collide", d3.forceCollide())
+        .force("center", d3.forceCenter())
+        .force("forceX", d3.forceX())
+        .force("forceY", d3.forceY())
+        .on("tick", this.tick)
+      // Call first time to setup default values
+      this.updateForces()
+    },
+    mounted() {
+      this.selections.svg = d3.select(this.$el.querySelector("#dep-graph"))
+      const svg = this.selections.svg
+      // Define the arrow marker
+      svg.append("svg:defs").selectAll("marker")
+            .data(["dep-graph-end"])     // Different link/path types can be defined here
+          .enter().append("svg:marker")    // This section adds in the arrows
+            .attr("id", String)
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 41)              // Prevents arrowhead from being covered by circle
+            .attr("refY", 0)
+            .attr("markerWidth", 10)
+            .attr("markerHeight", 10)
+            .attr("orient", "auto")
+          .append("svg:path")
+            .attr("d", "M0,-5L10,0L0,5");
+
+      // Add zoom
+      svg.call(d3.zoom()
+        .scaleExtent([1 / 4, 4])
+        .on('zoom', this.zoomed))
+
+      this.selections.graph = svg.append("g")
+      const graph = this.selections.graph
+      const circle = graph.selectAll("circle")
+
+      // Handle hovers on the run order graph
+      this.$root.$on('nodeHover', stateData => {
+        const circle = this.selections.graph.selectAll("circle")
+        circle.classed('viewstate-hovered', false)
+        circle.classed('viewstate-selected', false)
+        circle.filter((d) => d.name === stateData.name).each(function(d) {
+            if(!this.selectedNode) {
+              // If no selected node. Select this one.
+              this.selectedNode = d;
+              circle.filter((td) => td === d)
+                .classed('viewstate-hovered', true)
+            } else {
+            // Check if the node selected is the currently selected.
+              if(d == this.selectedNode) {
+                // Unpin the selected node.
+                circle.filter((td) => td === d)
+                  .classed('viewstate-hovered', true)
+                this.selectedNode = false
+              } else {
+                this.selectedNode = d
+                circle.classed('viewstate-selected', false)
+                circle.filter((td) => td === d)
+                  .classed('viewstate-hovered', true)
+              }
+          }
+        })
+      })
+    },
+    methods: {
+      tick() {
+        // If no data is passed to the Vue component, do nothing
+        if (!this.data) { return }
+        const transform = d => {
+          return "translate(" + d.x + "," + d.y + ")"
+        }
+
+        const link = d => {
+          return "M" + d.source.x + "," + d.source.y + " L" + d.target.x + "," + d.target.y;
+        }
+
+        // Highlight the currently viewed state node
+        // TODO : Only really need to do this once, not every tick().
+        const circle = this.selections.graph.selectAll("circle")
+        circle.filter((td) => td['name'] == this.state)
+            .classed('current-state', true)
+
+        const graph = this.selections.graph
+        graph.selectAll("path").attr("d", link)
+          .style('stroke-dasharray', function(d) {
+            return d.redundant === 'true' ? '0.75rem' : null
+          }).style('stroke-opacity', function(d) {
+            return d.redundant === 'true' ? 0.9 : 1
+          })
+        graph.selectAll("circle").attr("transform", transform)
+        graph.selectAll("text").attr("transform", transform)
+      },
+      updateData() {
+        this.simulation.nodes(this.nodes)
+        this.simulation.force("link").links(this.links)
+
+        const simulation = this.simulation
+        const graph = this.selections.graph
+
+        // Links should only exit if not needed anymore
+        graph.selectAll("path")
+          .data(this.links)
+        .exit().remove()
+
+        graph.selectAll("path")
+          .data(this.links)
+        .enter().append("path")
+          .attr("class", d => "link " + d.type)
+
+        // Nodes should always be redrawn to avoid lines above them
+        graph.selectAll("circle").remove()
+        graph.selectAll("circle")
+          .data(this.nodes)
+        .enter().append("circle")
+          .attr("r", 30)
+          .attr("class", d => d.class)
+          .call(d3.drag()
+            .on('start', this.nodeDragStarted)
+            .on('drag', this.nodeDragged)
+            .on('end', this.nodeDragEnded))
+          .on('mouseover', this.nodeMouseOver)
+          .on('mouseout', this.nodeMouseOut)
+          .on('click', this.nodeClick)
+
+        graph.selectAll("text").remove()
+        graph.selectAll("text")
+          .data(this.nodes)
+        .enter().append("text")
+          .attr("x", 0)
+          .attr("y", ".31em")
+          .attr("text-anchor", "middle")
+          .text(d => d.name)
+
+        // Add 'marker-end' attribute to each path
+        const svg = d3.select(this.$el.querySelector("#dep-graph"))
+
+        svg.selectAll("g").selectAll("path").attr("marker-end", d => {
+          // Caption items doesn't have source and target
+          if (d.source && d.target &&
+            d.source.index === d.target.index) return "url(#end-self)";
+          else return "url(#dep-graph-end)";
+        });
+      },
+      updateForces() {
+        const { simulation, forceProperties, width, height } = this
+        simulation.force("center")
+        .x(width * forceProperties.center.x)
+        .y(height * forceProperties.center.y)
+        simulation.force("charge")
+          .strength(forceProperties.charge.strength * forceProperties.charge.enabled)
+          .distanceMin(forceProperties.charge.distanceMin)
+          .distanceMax(forceProperties.charge.distanceMax)
+        simulation.force("collide")
+          .strength(forceProperties.collide.strength * forceProperties.collide.enabled)
+          .radius(forceProperties.collide.radius)
+          .iterations(forceProperties.collide.iterations)
+        simulation.force("forceX")
+          .strength(forceProperties.forceX.strength * forceProperties.forceX.enabled)
+          .x(width * forceProperties.forceX.x)
+        simulation.force("forceY")
+          .strength(forceProperties.forceY.strength * forceProperties.forceY.enabled)
+          .y(height * forceProperties.forceY.y)
+        simulation.force("link")
+          .distance(forceProperties.link.distance)
+          .iterations(forceProperties.link.iterations)
+
+        // updates ignored until this is run
+        // restarts the simulation (important if simulation has already slowed down)
+        simulation.alpha(1).restart()
+      },
+      zoomed() {
+        const transform = d3.event.transform
+        const translate = transform.x * transform.k + ',' +
+          transform.y * transform.k
+        this.selections.graph.attr('transform', transform)
+
+        // Define some world boundaries based on the graph total size
+        // so we don't scroll indefinitely
+        const graphBox = this.selections.graph.node().getBBox()
+        const margin = 200
+        const worldTopLeft = [graphBox.x - margin, graphBox.y - margin]
+        const worldBottomRight = [
+          graphBox.x + graphBox.width + margin,
+          graphBox.y + graphBox.height + margin
+        ]
+        
+      },
+      nodeDragStarted(d) {
+        if (!d3.event.active) { this.simulation.alphaTarget(0.3).restart() }
+        d.fx = d.x
+        d.fy = d.y
+      },
+      nodeDragged(d) {
+        d.fx = d3.event.x
+        d.fy = d3.event.y
+      },
+      nodeDragEnded(d) {
+        if (!d3.event.active) { this.simulation.alphaTarget(0.0001) }
+        d.fx = null
+        d.fy = null
+      },
+      nodeMouseOver(d) {
+        const graph = this.selections.graph
+        const circle = graph.selectAll("circle")
+        const path = graph.selectAll("path")
+        const text = graph.selectAll("text")
+
+        const related = []
+        const relatedLinks = []
+        related.push(d)
+        this.simulation.force('link').links().forEach((link) => {
+          if (link.source === d || link.target === d) {
+            relatedLinks.push(link)
+            if (related.indexOf(link.source) === -1) { related.push(link.source) }
+            if (related.indexOf(link.target) === -1) { related.push(link.target) }
+          }
+        })
+        circle.classed('faded', true)
+        circle
+          .filter((df) => related.indexOf(df) > -1)
+          .classed('highlight', true)
+        path.classed('faded', true)
+        path
+          .filter((df) => df.source === d || df.target === d)
+          .classed('highlight', true)
+        text.classed('faded', true)
+        text
+          .filter((df) => related.indexOf(df) > -1)
+          .classed('highlight', true)
+        // This ensures that tick is called so the node count is updated
+        this.simulation.alphaTarget(0.0001).restart()
+
+        circle.classed('viewstate-hovered', false)
+        circle.classed('viewstate-selected', false)
+        if(!this.selectedNode) {
+          const circle = this.selections.graph.selectAll("circle")
+          circle.classed('viewstate-hovered', false)
+          circle.filter((td) => td === d)
+            .classed('viewstate-hovered', true)
+
+          this.$root.$emit('nodeHover', d)
+        }
+      },
+      nodeMouseOut(d) {
+        const graph = this.selections.graph
+        const circle = graph.selectAll("circle")
+        const path = graph.selectAll("path")
+        const text = graph.selectAll("text")
+
+        circle.classed('faded', false)
+        circle.classed('highlight', false)
+        path.classed('faded', false)
+        path.classed('highlight', false)
+        text.classed('faded', false)
+        text.classed('highlight', false)
+        // This ensures that tick is called so the node count is updated
+        this.simulation.restart()
+      },
+      nodeClick(d) {
+        const circle = this.selections.graph.selectAll("circle")
+        circle.classed('viewstate-selected', false)
+        circle.filter((td) => td === d)
+          .classed('viewstate-selected', true)
+      },
+    },
+    watch: {
+      data: {
+        handler(newData) {
+          this.updateData()
+        },
+        deep: true
+      },
+      forceProperties: {
+        handler(newForce) {
+          this.updateForces()
+        },
+        deep: true
+      }
+    }
+  })
+
+Vue.component('r-dependency-graph', {
+    template:
+    `<div :style="{ position: 'relative' }">
+      <svg id="r-dep-graph" width="100%" height="700px">
+      </svg>
+    </div>`,
+    props: ['data'],
+    data() {
+      return {
+        width: 1024,
+        height: 768,
+        hcolours: ['#2e59d9', '#17a673', '#ED461D', '#EDC645', '#E467CF', '#5E9FD4', '#5C5CFF', '#050227', '#EBBC6F', '#f59f3d', '#5595B4', '#94CCDB', '#012727', '#4F4940', '#8CE3C0', '#9CDCFC', '#453D52'],
+        bcolours: ['#4e73df', '#1cc88a', '#F06543', '#F0CF65', '#EA88DA', '#7EB2DD', '#7F7EFF', '#090446', '#EFC88B', '#f38c16', '#6EA4BF', '#A8D5E2', '#034748', '#60594D', '#A1E8CC', '#BCE7FD', '#574D68'],
+        stateIds: [],
+        selections: {},
+        simulation: null,
+        forceProperties: {
+          center: {
+            x: 0.40,
+            y: 0.3
+          },
+          charge: {
+            enabled: true,
+            strength: -5000,
+            distanceMin: 1,
+            distanceMax: 500
+          },
+          collide: {
+            enabled: true,
+            strength: .7,
+            iterations: 1,
+            radius: 30
+          },
+          forceX: {
+            enabled: true,
+            strength: 0.5,
+            x: 0.5
+          },
+          forceY: {
+            enabled: true,
+            strength: 0.35,
+            y: 0.5
+          },
+          link: {
+            enabled: true,
+            distance: 100,
+            iterations: 1
+          }
+        },
+      }
+    },
+    computed: {
+      nodes() { return this.data.nodes },
+      links() { return this.data.links },
+      // These are needed for captions
+      linkTypes() {
+        const linkTypes = []
+        this.links.forEach(link => {
+          if (linkTypes.indexOf(link.type) === -1)
+            linkTypes.push(link.type)
+        })
+        return linkTypes.sort()
+      },
+      classes() {
+        const classes = []
+        this.nodes.forEach(node => {
+          if (classes.indexOf(node.class) === -1)
+            classes.push(node.class)
+        })
+        return classes.sort()
+      },
+    },
+    created() {
+      // You can set the component width and height in any way
+      // you prefer. It's responsive! :)
+      this.width = window.innerWidth - 10
+      this.height = window.innerHeight - 110
+
+      this.simulation = d3.forceSimulation()
+        .force("link", d3.forceLink())
+        .force("charge", d3.forceManyBody())
+        .force("collide", d3.forceCollide())
+        .force("center", d3.forceCenter())
+        .force("forceX", d3.forceX())
+        .force("forceY", d3.forceY())
+        .on("tick", this.tick)
+      // Call first time to setup default values
+      this.updateForces()
+    },
+    mounted() {
+      const svg = d3.select(this.$el.querySelector("#r-dep-graph"))
+
+      // Define the arrow marker
+      svg.append("svg:defs").selectAll("marker")
+            .data(["r-dep-graph-end"])     // Different link/path types can be defined here
+          .enter().append("svg:marker")    // This section adds in the arrows
+            .attr("id", String)
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 41)              // Prevents arrowhead from being covered by circle
+            .attr("refY", -2)
+            .attr("markerWidth", 10)
+            .attr("markerHeight", 10)
+            .attr("orient", "auto")
+          .append("svg:path")
+            .attr("d", "M0,-5L,0L0,5");
+
+      // Add zoom
+      svg.call(d3.zoom()
+        .scaleExtent([1 / 4, 4])
+        .on('zoom', this.zoomed))
+
+      this.selections.graph = svg.append("g")
+      const graph = this.selections.graph
+      const circle = graph.selectAll("circle")
+
+      // Handle hovers on the run order graph
+      this.$root.$on('nodeHover', stateData => {
+        const circle = this.selections.graph.selectAll("circle")
+        circle.classed('resource', true)
+        circle.classed('viewstate-hovered', false)
+        circle.classed('viewstate-selected', false)
+        circle.filter((d) => d.name === stateData.name).each(function(d) {
+            if(!this.selectedNode) {
+              // If no selected node. Select this one.
+              this.selectedNode = d;
+              circle.filter((td) => td === d)
+                .classed('viewstate-hovered', false)
+                .classed('viewstate-selected', true)
+            } else {
+            // Check if the node selected is the currently selected.
+              if(d == this.selectedNode) {
+                // Unpin the selected node.
+                circle.filter((td) => td === d)
+                  .classed('viewstate-hovered', true)
+                  .classed('viewstate-selected', false)
+                this.selectedNode = false
+              } else {
+                this.selectedNode = d
+                circle.classed('viewstate-selected', false)
+                circle.filter((td) => td === d)
+                  .classed('viewstate-hovered', false)
+                  .classed('viewstate-selected', true)
+              }
+          }
+        })
+      })
+    },
+    methods: {
+      tick() {
+        // If no data is passed to the Vue component, do nothing
+        if (!this.data) { return }
+        const transform = d => {
+          return "translate(" + d.x +  "," + d.y + ")"
+        }
+
+        const link = d => {
+          return "M" + d.source.x + "," + d.source.y + " L" + d.target.x + "," + d.target.y;
+        }
+
+        const vc = this
+
+        // Highlight the currently viewed state node
+        // TODO : Only really need to do this once, not every tick().
+        const circle = this.selections.graph.selectAll("circle")
+        circle.filter((td) => td['name'] == this.state)
+            .classed('current-state', true)
+
+        const graph = this.selections.graph
+        graph.selectAll("path").attr("d", link)
+        graph.selectAll("circle").attr("transform", transform)
+        graph.selectAll("text").attr("transform", transform)
+
+        circle.style("stroke", function(d) {
+          const colour = vc.hcolours[vc.stateIds.indexOf(d['state_id'])]
+          return colour
+        })
+      },
+      updateData() {
+        this.simulation.nodes(this.nodes)
+        this.simulation.force("link").links(this.links)
+
+        const simulation = this.simulation
+        const graph = this.selections.graph
+        const vc = this
+
+        // Links should only exit if not needed anymore
+        graph.selectAll("path")
+          .data(this.links)
+        .exit().remove()
+
+        graph.selectAll("path")
+          .data(this.links)
+        .enter().append("path")
+          .attr("class", d => "link " + d.type)
+
+        this.nodes.forEach(function(d) {
+          vc.stateIds.push(d['state_id'])
+        })
+
+        // Nodes should always be redrawn to avoid lines above them
+        graph.selectAll("circle").remove()
+        graph.selectAll("circle")
+          .data(this.nodes)
+        .enter().append("circle")
+          .attr("r", 30)
+          .attr("class", d => d.class)
+          .call(d3.drag()
+            .on('start', this.nodeDragStarted)
+            .on('drag', this.nodeDragged)
+            .on('end', this.nodeDragEnded))
+          .on('mouseover', this.nodeMouseOver)
+          .on('mouseout', this.nodeMouseOut)
+          .on('click', this.nodeClick)
+
+        graph.selectAll("text").remove()
+        graph.selectAll("text")
+          .data(this.nodes)
+        .enter().append("text")
+          .attr("x", 0)
+          .attr("y", ".31em")
+          .attr("text-anchor", "middle")
+          .text(d => d.namespace)
+
+        // Add 'marker-end' attribute to each path
+        const svg = d3.select(this.$el.querySelector("#r-dep-graph"))
+
+        svg.selectAll("g").selectAll("path").attr("marker-end", d => {
+          // Caption items doesn't have source and target
+          if (d.source && d.target &&
+            d.source.index === d.target.index) return "url(#r-end-self)";
+          else return "url(#r-dep-graph-end)";
+        });
+      },
+      updateForces() {
+        const { simulation, forceProperties, width, height } = this
+        simulation.force("center")
+        .x(width * forceProperties.center.x)
+        .y(height * forceProperties.center.y)
+        simulation.force("charge")
+          .strength(forceProperties.charge.strength * forceProperties.charge.enabled)
+          .distanceMin(forceProperties.charge.distanceMin)
+          .distanceMax(forceProperties.charge.distanceMax)
+        simulation.force("collide")
+          .strength(forceProperties.collide.strength * forceProperties.collide.enabled)
+          .radius(forceProperties.collide.radius)
+          .iterations(forceProperties.collide.iterations)
+        simulation.force("forceX")
+          .strength(forceProperties.forceX.strength * forceProperties.forceX.enabled)
+          .x(width * forceProperties.forceX.x)
+        simulation.force("forceY")
+          .strength(forceProperties.forceY.strength * forceProperties.forceY.enabled)
+          .y(height * forceProperties.forceY.y)
+        simulation.force("link")
+          .distance(forceProperties.link.distance)
+          .iterations(forceProperties.link.iterations)
+
+        // updates ignored until this is run
+        // restarts the simulation (important if simulation has already slowed down)
+        simulation.alpha(1).restart()
+      },
+      zoomed() {
+        const transform = d3.event.transform
+        const translate = transform.x * transform.k + ',' +
+          transform.y * transform.k
+        this.selections.graph.attr('transform', transform)
+
+        // Define some world boundaries based on the graph total size
+        // so we don't scroll indefinitely
+        const graphBox = this.selections.graph.node().getBBox()
+        const margin = 200
+        const worldTopLeft = [graphBox.x - margin, graphBox.y - margin]
+        const worldBottomRight = [
+          graphBox.x + graphBox.width + margin,
+          graphBox.y + graphBox.height + margin
+        ]
+      },
+      nodeDragStarted(d) {
+        if (!d3.event.active) { this.simulation.alphaTarget(0.3).restart() }
+        d.fx = d.x
+        d.fy = d.y
+      },
+      nodeDragged(d) {
+        d.fx = d3.event.x
+        d.fy = d3.event.y
+      },
+      nodeDragEnded(d) {
+        if (!d3.event.active) { this.simulation.alphaTarget(0.0001) }
+        d.fx = null
+        d.fy = null
+      },
+      nodeMouseOver(d) {
+        const graph = this.selections.graph
+        const circle = graph.selectAll("circle")
+        const path = graph.selectAll("path")
+        const text = graph.selectAll("text")
+
+        const related = []
+        const relatedLinks = []
+        related.push(d)
+        this.simulation.force('link').links().forEach((link) => {
+          if (link.source === d || link.target === d) {
+            relatedLinks.push(link)
+            if (related.indexOf(link.source) === -1) { related.push(link.source) }
+            if (related.indexOf(link.target) === -1) { related.push(link.target) }
+          }
+        })
+        circle.classed('faded', true)
+        circle
+          .filter((df) => related.indexOf(df) > -1)
+          .classed('highlight', true)
+        path.classed('faded', true)
+        path
+          .filter((df) => df.source === d || df.target === d)
+          .classed('highlight', true)
+        text.classed('faded', true)
+        text
+          .filter((df) => related.indexOf(df) > -1)
+          .classed('highlight', true)
+        // This ensures that tick is called so the node count is updated
+        this.simulation.alphaTarget(0.0001).restart()
+
+        circle.classed('viewstate-hovered', false)
+        circle.classed('viewstate-selected', false)
+        if(!this.selectedNode) {
+          const circle = this.selections.graph.selectAll("circle")
+          circle.classed('viewstate-hovered', false)
+          circle.filter((td) => td === d)
+            .classed('viewstate-hovered', true)
+        }
+      },
+      nodeMouseOut(d) {
+        const graph = this.selections.graph
+        const circle = graph.selectAll("circle")
+        const path = graph.selectAll("path")
+        const text = graph.selectAll("text")
+
+        circle.classed('faded', false)
+        circle.classed('highlight', false)
+        path.classed('faded', false)
+        path.classed('highlight', false)
+        text.classed('faded', false)
+        text.classed('highlight', false)
+        // This ensures that tick is called so the node count is updated
+        this.simulation.restart()
+      },
+      nodeClick(d) {
+        const circle = this.selections.graph.selectAll("circle")
+        circle.classed('viewstate-selected', false)
+        circle.filter((td) => td === d)
+          .classed('viewstate-selected', true)
+      },
+    },
+    watch: {
+      data: {
+        handler(newData) {
+          this.updateData()
+        },
+        deep: true
+      },
+      forceProperties: {
+        handler(newForce) {
+          this.updateForces()
+        },
+        deep: true
+      }
+    }
+  })
+
+
+  new Vue({
+    el: '#app',
+    delimiters: ["[[", "]]"],
+    data() {
+      return {
+        data: null,
+        resourcedata: null,
+        nodeSelected: false,
+        rodata: null,
+        state: '{{ state_name }}',
+        api_prefix: '/api/v1/states/',
+        api_suffix: '/run-order',
+        infoLastSynced: '{{ stats.last_updated|naturaltime }}',
+        syncBtnDisabled: false
+      }
+    },
+    mounted() {
+      this.changeData();
+      this.loadGrowthChart();
+      this.loadResourceTypeChart();
+    },
+    methods: {
+      loadResourceTypeChart() {
+        var rtrhcolours = []
+        var rtrbcolours = []
+        const chartData = {{ charts.resource_distribution.data|safe }}
+        const chartLabels = {{ charts.resource_distribution.labels|safe }}
+        const maxY = Math.max(...chartData)
+
+        var ctx = document.getElementById("resourceTypeDistroChart");
+        var resourceTypeBarChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: chartLabels,
+            datasets: [{
+              label: "Count",
+              backgroundColor: "#D4C9F8",
+              hoverBackgroundColor: "#491DD7",
+              borderColor: "#623CE4",
+              data: chartData
+            }],
+          },
+          options: {
+            maintainAspectRatio: false,
+            layout: {
+              padding: {
+                left: 10,
+                right: 25,
+                top: 25,
+                bottom: 0
+              }
+            },
+            scales: {
+              xAxes: [{
+                gridLines: {
+                  display: false,
+                  drawBorder: false
+                },
+                ticks: {
+                  maxTicksLimit: 6,
+                  display: false
+                },
+                maxBarThickness: 25,
+              }],
+              yAxes: [{
+                ticks: {
+                  min: 0,
+                  max: maxY,
+                  maxTicksLimit: 5,
+                  padding: 10
+                },
+                gridLines: {
+                  color: "rgb(234, 236, 244)",
+                  zeroLineColor: "rgb(234, 236, 244)",
+                  drawBorder: false,
+                  borderDash: [2],
+                  zeroLineBorderDash: [2]
+                }
+              }],
+            },
+            legend: {
+              display: false
+            },
+            tooltips: {
+              titleMarginBottom: 10,
+              titleFontColor: '#6e707e',
+              titleFontSize: 14,
+              backgroundColor: "rgb(255,255,255)",
+              bodyFontColor: "#858796",
+              borderColor: '#dddfeb',
+              borderWidth: 1,
+              xPadding: 15,
+              yPadding: 15,
+              displayColors: false,
+              caretPadding: 10,
+            },
+          }
+        });
+      },
+      loadGrowthChart() {
+        var rtrhcolours = []
+        var rtrbcolours = []
+        const chartData = {{ charts.growth.data|safe }}
+        const chartLabels = {{ charts.growth.labels|safe }}
+        const maxY = Math.max(...chartData)
+
+        var ctx = document.getElementById("growthChart");
+        var resourceTypeBarChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: chartLabels,
+            datasets: [{
+              label: "Count",
+              backgroundColor: "#D4C9F8",
+              hoverBackgroundColor: "#491DD7",
+              borderColor: "#623CE4",
+              data: chartData
+            }],
+          },
+          options: {
+            maintainAspectRatio: false,
+            layout: {
+              padding: {
+                left: 10,
+                right: 25,
+                top: 25,
+                bottom: 0
+              }
+            },
+            scales: {
+              xAxes: [{
+                gridLines: {
+                  display: false,
+                  drawBorder: false
+                },
+                ticks: {
+                  maxTicksLimit: 6,
+                  display: true
+                },
+                maxBarThickness: 25,
+              }],
+              yAxes: [{
+                ticks: {
+                  min: 0,
+                  max: maxY,
+                  maxTicksLimit: 5,
+                  padding: 10
+                },
+                gridLines: {
+                  color: "rgb(234, 236, 244)",
+                  zeroLineColor: "rgb(234, 236, 244)",
+                  drawBorder: false,
+                  borderDash: [2],
+                  zeroLineBorderDash: [2]
+                }
+              }],
+            },
+            legend: {
+              display: false
+            },
+            tooltips: {
+              titleMarginBottom: 10,
+              titleFontColor: '#6e707e',
+              titleFontSize: 14,
+              backgroundColor: "rgb(255,255,255)",
+              bodyFontColor: "#858796",
+              borderColor: '#dddfeb',
+              borderWidth: 1,
+              xPadding: 15,
+              yPadding: 15,
+              displayColors: false,
+              caretPadding: 10,
+            },
+          }
+        });
+      },
+      syncState() {
+        this.syncBtnDisabled = true
+        $('#syncAlertPlaceholder').append('<div id="syncAlert" class="alert alert-dismissible show fade" ' +
+              'style="background: #623CE4; height: 5rem; margin-top: -1.5rem; padding-left: 38%; border-radius: 0rem !important; padding-top: 1.5rem;">' +
+              '<h1 class="h3 mb-0 text-white"> Workspace Synchronizing ...</h1>' +
+          '</div>').hide().fadeIn(2000)
+        d3.json('/api/v1/states/{{ state_name }}?sync=true').then(data => {
+          this.data = data
+          this.infoLastSynced = "Just now"
+          d3.json(this.api_prefix + this.state + this.api_suffix).then(rodata => {
+            this.rodata = rodata
+            this.syncBtnDisabled = false
+            $('#syncAlert').remove().fadeOut(2000)
+          }).catch(error => {
+            console.error('Error occurred refreshing run order after state synchronization.')
+          })
+        }).catch(error => {
+          console.error('Error occurred synchronizing state.')
+        })
+      },
+      changeData() {
+        d3.json(this.api_prefix + this.state).then(data => {
+          this.data = data
+        }).catch(error => {
+          console.error('Error occurred, failed to retrieve initial state data.')
+        })
+        d3.json(this.api_prefix + this.state + '/resources?dependencies=false').then(data => {
+          this.resourcedata = data
+        }).catch(error => {
+          console.error('Error occurred, failed to retrieve initial resource data.')
+        })
+        d3.json(this.api_prefix + this.state + this.api_suffix).then(rodata => {
+          this.rodata = rodata
+        }).catch(error => {
+          console.error('Error occurred, failed to retrieve initial run order data.')
+        })
+      }
+    }
+  })
+  </script>
+</html>
