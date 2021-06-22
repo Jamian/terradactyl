@@ -1,0 +1,165 @@
+.node {
+    cursor: pointer;
+}
+
+.node circle {
+    fill: #fff;
+    stroke: #5BC0EB;
+    stroke-width: 0.6em;
+}
+
+.node text {
+    font: 12px sans-serif;
+}
+
+.link {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 1px;
+}
+
+.faded {
+    opacity: 0.1;
+    transition: 0.3s opacity;
+}
+
+.highlight {
+    opacity: 1;
+}
+
+path.link {
+    fill: none;
+    stroke: #60616f;
+    stroke-width: 1px;
+}
+
+path.link.depends_on {
+    stroke: #60616f;
+}
+
+path.link.needs {
+    stroke: #7f3f00;
+}
+
+
+/* State */
+
+circle {
+    fill: #ffff;
+    stroke: #5BC0EB;
+    stroke-width: 0.2em;
+    cursor: pointer;
+}
+
+circle.mount {
+    fill: #ffe5e5;
+    stroke: #660000;
+}
+
+circle.init {
+    fill: #b2e8b2;
+    stroke: #001900;
+}
+
+circle.selected {
+    stroke: #623CE4 !important;
+    animation: selected 1s infinite alternate ease-in-out;
+}
+
+circle.searched {
+    stroke: #F06543 !important;
+    animation: searched 1s infinite alternate ease-in-out;
+}
+
+.current-state {
+    stroke: #F06543 !important;
+}
+
+circle.hovered {
+    stroke: #623CE4 !important;
+}
+
+.viewstate-hovered {
+    stroke: #623CE4 !important;
+    animation: viewstate-hovered 1s infinite alternate ease-in-out;
+}
+
+@keyframes viewstate-hovered {
+    from {
+        stroke-width: 0.3em;
+        r: 28;
+    }
+    to {
+        stroke-width: 0.1em;
+        r: 30;
+    }
+}
+
+@keyframes selected {
+    from {
+        stroke-width: 0.2em;
+        r: 8;
+    }
+    to {
+        stroke-width: 0.1em;
+        r: 5;
+    }
+}
+
+@keyframes searched {
+    from {
+        stroke-width: 0.2em;
+        r: 8;
+    }
+    to {
+        stroke-width: 0.1em;
+        r: 5;
+    }
+}
+
+
+/* Resources */
+
+circle.resource {
+    fill: #ffff;
+    stroke: #5BC0EB;
+    stroke-width: 0.2em;
+    cursor: pointer;
+}
+
+circle.resource.mount {
+    fill: #ffe5e5;
+    stroke: #660000;
+}
+
+circle.resource.init {
+    fill: #b2e8b2;
+    stroke: #001900;
+}
+
+circle.resource.selected {
+    stroke: #623CE4 !important;
+    /* animation: selected 1s infinite alternate ease-in-out; */
+}
+
+circle.resource.searched {
+    stroke: #F06543 !important;
+    animation: searched 1s infinite alternate ease-in-out;
+}
+
+text {
+    font: 1rem sans-serif;
+    pointer-events: none;
+    text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+circle.resource.caption {
+    fill: #CCCCCCAC;
+    stroke: #666;
+    stroke-width: 1px;
+}
+
+text.caption {
+    font-size: 14px;
+    font-weight: bold;
+}
