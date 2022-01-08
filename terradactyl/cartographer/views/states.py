@@ -49,7 +49,7 @@ def state(request, state_name):
     """
     workspace = Workspace.vertices.get(name=state_name)
 
-    charts_data_growth, resouce_count = _generate_growth_chart_data([workspace], calculate_cumsum=False)
+    charts_data_growth, _ = _generate_growth_chart_data([workspace], calculate_cumsum=False)
     current_revision = workspace.get_current_state_revision()
 
     resource_type_dist = Resource.vertices.count_by(group_by='resource_type', state_id=current_revision.state_id)
@@ -78,6 +78,7 @@ def state(request, state_name):
             'last_updated': datetime.datetime.utcfromtimestamp(float(workspace.last_updated)),
             'revision_count': workspace.get_total_revision_count(),
             'created_at': humanize.naturaldate(datetime.datetime.fromtimestamp(workspace.created_at)) + ' (' + humanize.naturaltime(datetime.datetime.fromtimestamp(workspace.created_at)) + ')',
+            'terraform_version': current_revision.terraform_version
         },
         'charts': {
             'resource_distribution': charts_data_resource_distribution,
@@ -156,7 +157,6 @@ def _generate_growth_chart_data(workspaces, calculate_cumsum=True):
         The data and labels and a resource count.
     """
     charts_growth_data = {}
-    charts_growth_data_ws = {}
     resource_count = 0
     for workspace in workspaces:
         has_current_revision = True
@@ -169,8 +169,7 @@ def _generate_growth_chart_data(workspaces, calculate_cumsum=True):
 
         if has_current_revision:
             resource_count += current_revision.resource_count
-        else:
-            resource_count = 0
+
         prev_resource_count = 0
         # First, for each workspace state revision store the difference on that day.
         # Then we can use those diffs to calculate a cumsum for each day accross as state revisions?
@@ -178,20 +177,18 @@ def _generate_growth_chart_data(workspaces, calculate_cumsum=True):
             created_at = state_revision.created_at_dt
             count_diff = state_revision.resource_count - prev_resource_count
             if created_at not in charts_growth_data:
-                # The first time we see the state, we add all the resources
+                # The first state here is the original, so we add all the resources.
                 charts_growth_data[created_at] = count_diff if calculate_cumsum else state_revision.resource_count
             else:
-                # Every other time we see the state, we want to add/remove the
-                # difference so that the cumsum is accurate.
                 if calculate_cumsum:
                     charts_growth_data[created_at] += count_diff
                 else:
                     charts_growth_data[created_at] = state_revision.resource_count
             prev_resource_count = state_revision.resource_count
-        
+
         if has_current_revision:
             # Handle current revision resource count (not returned by get revisions right now...)
-            count_diff = count_diff = current_revision.resource_count - prev_resource_count
+            count_diff = current_revision.resource_count - prev_resource_count
             current_rev_dt = current_revision.created_at_dt
             if current_rev_dt not in charts_growth_data:
                 charts_growth_data[current_rev_dt] = count_diff if calculate_cumsum else current_revision.resource_count

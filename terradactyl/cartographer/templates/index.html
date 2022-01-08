@@ -19,6 +19,9 @@
 
     <!-- Custom styles for this template-->
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <script type="text/javascript" src="//d3js.org/d3.v3.min.js"></script>
+    <script type="text/javascript" src="//cdn.jsdelivr.net/cal-heatmap/3.3.10/cal-heatmap.min.js"></script>
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/cal-heatmap/3.3.10/cal-heatmap.css" />
 
 </head>
 
@@ -150,6 +153,23 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                                Avg Monthly Applies</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="applies"> </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fa fa-refresh fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 <div class="row">
                     <div class="col-xl-4 col-lg-4">
@@ -190,6 +210,22 @@
                       </div>
                     </div>
                   </div>
+                <div class="row">
+                    <div class="col-xl-10 col-lg-10">
+                      <div class="card border-left-primary shadow mb-4">
+                          <!-- Card Header - Dropdown -->
+                          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                              <h6 class="m-0 font-weight-bold text-primary">Daily State Change</h6>
+                          </div>
+                          <!-- Card Body -->
+                          <div class="card-body">
+                            <div id="cal-heatmap"></div>
+                            <button id="example-g-PreviousDomain-selector" style="margin-top: 20px;" class="btn" data-ol-has-click-handler=""><i class="fas fa-arrow-left"></i></button>
+                            <button id="example-g-NextDomain-selector" style="margin-top: 20px;" class="btn" data-ol-has-click-handler=""><i class="fas fa-arrow-right"></i></button>
+                          </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <!-- /.container-fluid -->
             </div>
@@ -199,7 +235,7 @@
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; Terradactyl - Jamie West 2021</span>
+                        <span>Copyright &copy; Terradactyl - Jamie West 2022</span>
                     </div>
                 </div>
             </footer>
@@ -226,11 +262,37 @@
     <!-- Core plugin JavaScript-->
     <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
 
-    <!-- Custom scripts for all pages-->
-    <script src="js/scripts.js"></script>
-
     <!-- Page level plugins -->
     <script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
+
+    <!-- Heatmap -->
+    <script type="text/javascript">
+        const requestOptions = {
+            method: "GET",
+        }
+        fetch('/api/v1/insights/daily-change', requestOptions).then(response => {
+            response.json().then(data => {
+
+                $('#applies').text(data['stats']['avg_monthly_applies'])
+                var cal = new CalHeatMap();
+                cal.init({
+                    itemSelector: '#cal-heatmap',
+                    domain: 'month',
+                    subDomain: 'x_day',
+                    range: 12,
+                    data: data['daily_change'],
+                    cellSize: 14,
+                    cellPadding: 5,
+                    start: new Date(2019, 8),
+                    previousSelector: "#example-g-PreviousDomain-selector",
+                    nextSelector: "#example-g-NextDomain-selector",
+                    domainGutter: 20,
+                    domainDynamicDimension: false,
+                });
+            })
+        })
+
+    </script>
 </body>
 
 </html>

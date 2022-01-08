@@ -216,7 +216,22 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-xl-2 col-md-6 mb-4">
+                  <div class="card border-left shadow h-100 py-2">
+                      <div class="card-body">
+                          <div class="row no-gutters align-items-center">
+                              <div class="col mr-2">
+                                  <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                      Terraform Version</div>
+                                  <div class="h5 mb-0 font-weight-bold text-gray-800">[[ currentTerraformVersion ]] </div>
+                              </div>
+                              <div class="col-auto">
+                              </div>
+                          </div>
+                      </div>
+                  </div>
               </div>
+            </div>
               <div class="row">
                 <div class="col-lg">
                     <div class="card shadow mb-4 border-bottom">
@@ -390,7 +405,7 @@
           <footer class="sticky-footer bg-white">
             <div class="container my-auto">
               <div class="copyright text-center my-auto">
-                <span>Copyright &copy; Terradactyl - Jamie West 2021</span>
+                <span>Copyright &copy; Terradactyl - Jamie West 2022</span>
               </div>
             </div>
           </footer>
@@ -1169,6 +1184,7 @@ Vue.component('r-dependency-graph', {
         api_prefix: '/api/v1/states/',
         api_suffix: '/run-order',
         infoLastSynced: '{{ stats.last_updated|naturaltime }}',
+        currentTerraformVersion: '{{ stats.terraform_version }}',
         syncBtnDisabled: false
       }
     },
