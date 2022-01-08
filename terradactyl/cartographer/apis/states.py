@@ -72,7 +72,7 @@ def get_states(request):
             'dependency_count': ws.get_dependency_count(),
             'resource_count': current_state_resource_count,
             'organization': ws.organization,
-            'created_at': humanize.naturaldate(datetime.datetime.fromtimestamp(ws.created_at)),
+            'created_at': humanize_created_at(ws.created_at),
             'last_updated': ws.last_updated
         })
     print('Starting deps')
@@ -182,6 +182,13 @@ def get_state_resources(request, state_name):
     return response
 
 
+def humanize_created_at(created_at_raw):
+    if type(created_at_raw) == int:
+        return humanize.naturaldate(datetime.datetime.fromtimestamp(created_at_raw))
+    else:
+        return humanize.naturaldate(created_at_raw)
+
+
 @login_required
 def get_state_run_order(request, state_name):
     data = {'nodes': [], 'links': []}
@@ -203,26 +210,26 @@ def get_state_run_order(request, state_name):
                 ws_state = Workspace.vertices.get(name=ws_name, organization=path[i+1]['organization'][0]).get_current_state_revision()
                 dep_state = Workspace.vertices.get(name=dep_name, organization=path[i-1]['organization'][0]).get_current_state_revision()
                 workspaces_data[ws_name] = {
-                    'required-by': [dep_name],
+                    'required_by': [dep_name],
                     'depends_on': [],
                     'workspace_id': path[i+1]['workspace_id'],
                     'terraform_version': ws_state.terraform_version,
                     'serial': ws_state.serial,
-                    'created_at': humanize.naturaldate(datetime.datetime.fromtimestamp(path[i+1]['created_at'][0])),
+                    'created_at': humanize_created_at(path[i-1]['created_at'][0]),
                     'resource_count': ws_state.resource_count
                 }
             else:
-                if dep_name not in workspaces_data[ws_name]['required-by']:
-                    workspaces_data[ws_name]['required-by'].append(dep_name)
+                if dep_name not in workspaces_data[ws_name]['required_by']:
+                    workspaces_data[ws_name]['required_by'].append(dep_name)
 
             if dep_name not in workspaces_data:
                 workspaces_data[dep_name] = {
-                    'required-by': [],
+                    'required_by': [],
                     'depends_on': [ws_name],
                     'workspace_id': path[i-1]['workspace_id'],
                     'terraform_version': dep_state.terraform_version,
                     'serial': dep_state.serial,
-                    'created_at': humanize.naturaldate(datetime.datetime.fromtimestamp(path[i-1]['created_at'][0])),
+                    'created_at': humanize_created_at(path[i-1]['created_at'][0]),
                     'resource_count': dep_state.resource_count
                 }
                 dependency_counts[dep_name] = 1
@@ -237,41 +244,44 @@ def get_state_run_order(request, state_name):
     # Identify any dependency cycles...
     for workspace in workspaces_data:
         cyclic_dependencies = set(workspaces_data[workspace]['depends_on']) & set(
-            workspaces_data[workspace]['required-by'])
+            workspaces_data[workspace]['required_by'])
         if cyclic_dependencies:
             for cyclic_dep in cyclic_dependencies:
                 # Handle this side of the cyclic dependency.
                 if 'cyclic-dependencies' not in workspaces_data[cyclic_dep]:
                     workspaces_data[workspace]['depends_on'].remove(cyclic_dep)
                 if 'cyclic-dependencies' not in workspaces_data[workspace]:
-                    workspaces_data[workspace]['cyclic-dependencies'] = [cyclic_dep]
+                    workspaces_data[workspace]['cyclic-dependencies'] = [{
+                        'name': cyclic_dep,
+                        'required_by': workspace
+                    }]
                 else:
-                    workspaces_data[workspace]['cyclic-dependencies'].append(cyclic_dep)
+                    workspaces_data[workspace]['cyclic-dependencies'].append({
+                        'name': cyclic_dep,
+                        'required_by': workspace
+                    })
 
-    workspace_dependencies = {
-        ws: workspaces_data[ws]['depends_on'] for ws in workspaces_data}
+    workspace_dependencies = {ws: workspaces_data[ws]['depends_on'] for ws in workspaces_data}
 
     G = nx.DiGraph(workspace_dependencies)
     run_order = list(reversed(list(nx.topological_sort(G))))
 
     # Fromate the data block that d3 will use, create nodes and links.
     for i, workspace in enumerate(run_order):
-        if workspace in [ws['name'] for ws in data['nodes']]:
-            # Another handle for potential cycles being added earlier if needed.
-            continue
         d_count = dependency_counts[workspace] if workspace in dependency_counts else 0
-        data['nodes'].append({
-            'workspace_id': workspaces_data[workspace]['workspace_id'],
-            'name': workspace,
-            'depends_on': workspaces_data[workspace]['depends_on'],
-            'terraform_version': workspaces_data[workspace]['terraform_version'],
-            'resource_count': workspaces_data[workspace]['resource_count'],
-            'dependency_count': d_count,
-            'serial': workspaces_data[workspace]['serial'],
-            'created_at': humanize.naturaldate(workspaces_data[workspace]['created_at']),
-            'group': 1,
-            'class': 'state'
-        })
+        if workspace not in [ws['name'] for ws in data['nodes']]:
+            data['nodes'].append({
+                'workspace_id': workspaces_data[workspace]['workspace_id'],
+                'name': workspace,
+                'depends_on': workspaces_data[workspace]['depends_on'],
+                'terraform_version': workspaces_data[workspace]['terraform_version'],
+                'resource_count': workspaces_data[workspace]['resource_count'],
+                'dependency_count': d_count,
+                'serial': workspaces_data[workspace]['serial'],
+                'created_at': humanize_created_at(workspaces_data[workspace]['created_at']),
+                'group': 1,
+                'class': 'state'
+            })
         if 0 <= i < len(run_order) - 1:
             data['links'].append({
                 'source': i,
@@ -279,33 +289,36 @@ def get_state_run_order(request, state_name):
                 'value': 1,
                 'type': 'depends_on'
             })
+
         if 'cyclic-dependencies' in workspaces_data[workspace]:
             # If first node has dependency (in event of cycles).
             # TODO : Does this break cyclic deps in the middle of the chain?
             for cyclic_dep in workspaces_data[workspace]['cyclic-dependencies']:
-                data['nodes'].append({
-                    'workspace_id': workspaces_data[cyclic_dep]['workspace_id'],
-                    'name': cyclic_dep,
-                    'depends_on': workspaces_data[cyclic_dep]['depends_on'],
-                    'terraform_version': workspaces_data[cyclic_dep]['terraform_version'],
-                    'resource_count': workspaces_data[cyclic_dep]['resource_count'],
-                    'created_at': workspaces_data[cyclic_dep]['created_at'],
-                    'dependency_count': dependency_counts[cyclic_dep],
-                    'group': 1,
-                    'class': 'state'
-                })
+                # Get the position of the cyclic dependency node
+                cyclic_dep_name = cyclic_dep['name']
+                if cyclic_dep_name not in [ws['name'] for ws in data['nodes']]:
+                    data['nodes'].append({
+                        'workspace_id': workspaces_data[cyclic_dep_name]['workspace_id'],
+                        'name': cyclic_dep_name,
+                        'depends_on': workspaces_data[cyclic_dep_name]['depends_on'],
+                        'terraform_version': workspaces_data[cyclic_dep_name]['terraform_version'],
+                        'resource_count': workspaces_data[cyclic_dep_name]['resource_count'],
+                        'created_at': workspaces_data[cyclic_dep_name]['created_at'],
+                        'dependency_count': dependency_counts[cyclic_dep_name],
+                        'group': 1,
+                        'class': 'state'
+                    })
+
+                origin_node_pos = _index_for_name(data['nodes'], cyclic_dep['required_by'])
+                cyclic_node_pos = _index_for_name(data['nodes'], cyclic_dep['name'])
+
                 data['links'].append({
-                    'source': len(data['nodes']) - 2,
-                    'target': len(data['nodes']) - 1,
+                    'source': cyclic_node_pos,
+                    'target': origin_node_pos,
                     'value': 1,
                     'type': 'depends_on'
                 })
-                data['links'].append({
-                    'source': len(data['nodes']) - 1,
-                    'target': len(data['nodes']) - 2,
-                    'value': 1,
-                    'type': 'depends_on'
-                })
+
     return JsonResponse(data)
 
 
@@ -338,11 +351,12 @@ def get_state(request, state_name):
                     'serial': source_state.serial,
                     'dependency_count': Workspace.vertices.get(name=path[i-1]['name'][0]).get_dependency_count(),
                     'resource_count': source_state.resource_count,
-                    'created_at': humanize.naturaldate(datetime.datetime.fromtimestamp(path[i-1]['created_at'][0])),
+                    'created_at': humanize_created_at(path[i-1]['created_at'][0]),
                     'group': 1,
                     'class': 'state'
                 })
                 target_state = Workspace.vertices.get(name=path[i-1]['name'][0], organization=path[i-1]['organization'][0]).get_current_state_revision()
+
                 target_index = _insert_dict(data['nodes'], {
                     '_id': path[i+1][T.id],
                     'name': path[i+1]['name'][0],
@@ -350,7 +364,7 @@ def get_state(request, state_name):
                     'serial': target_state.serial,
                     'dependency_count': Workspace.vertices.get(name=path[i+1]['name'][0]).get_dependency_count(),
                     'resource_count': target_state.resource_count,
-                    'created_at': humanize.naturaldate(datetime.datetime.fromtimestamp(path[i+1]['created_at'][0])),
+                    'created_at': humanize_created_at(path[i+1]['created_at'][0]),
                     'group': 1,
                     'class': 'state'
                 })
