@@ -37,7 +37,6 @@ def terraform_versions(request):
             'org_name': w.organization,
             'terraform_version': terraform_version
         })
-        
 
     context = {
         'stats': {
@@ -46,3 +45,34 @@ def terraform_versions(request):
     }
     return render(request, 'terraform-versions.html', context)
 
+@login_required
+def redundant_dependencies(request):
+    ""
+    ""
+
+    workspace_data = []
+    workspace_vertices = Workspace.vertices.all()
+
+    for w in workspace_vertices:
+        try:
+            terraform_version = w.get_current_state_revision().terraform_version
+        except VertexDoesNotExistException:
+            continue
+        
+        required_deps_count = w.get_dependency_count()
+        redundant_deps_count = w.get_dependency_count(redundant=True)
+        workspace_data.append({
+            'name': w.name,
+            'org_name': w.organization,
+            'dependency_count': required_deps_count + redundant_deps_count,
+            'r_dependency_count': redundant_deps_count,
+            'terraform_version': terraform_version
+        })
+
+    context = {
+        'stats': {
+        },
+        'workspace_data': workspace_data
+    }
+
+    return render(request, 'redundant-dependencies.html', context)

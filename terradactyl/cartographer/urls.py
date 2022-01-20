@@ -13,6 +13,7 @@ urlpatterns = [
     path('states/<state_name>', states_view.state, name='states'),
     path('remotes/terraform-cloud', remotes.remotes_terraform_cloud, name='remotes-terraform-cloud'),
     path('reports/terraform-versions', reports_view.terraform_versions, name='reports-terraform-versions'),
+    path('reports/redundant-dependencies', reports_view.redundant_dependencies, name='reports-redundant-dependencies'),
 
     # Apis
     path('api/v1/states', states_api.get_states, name='get-states'),

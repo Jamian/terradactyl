@@ -8,6 +8,12 @@ from cartographer.models import TerraformCloudOrganization
 
 logger = logging.getLogger(__name__)
 
+class WorkspaceNotFoundException(Exception):
+    """Raised when an attempt to fetch Workspace info from Terraform Cloud
+    results in a returned 404 and 'not found' message.
+    """
+    pass
+
 
 def parse_tf_datetime_str(datetime_str):
     """Parse Terraform Cloud time string into a datetime object.
@@ -88,7 +94,7 @@ class TerraformCloudClient():
                     if 'dependencies' in instance:
                         for dependency in [d for d in instance['dependencies'] if 'terraform_remote_state' in d]:
                             if dependency not in workspace['depends_on']:
-                                raise Exception('Error parsing dependencies... missing terraform_remote_state referenced: ' + dependency)
+                                raise Exception(f'Error parsing dependencies... missing terraform_remote_state referenced. Dependency: {dependency}. Workspace: {workspace["name"]}')
                             else:
                                 workspace['depends_on'][dependency]['redundant'] = False
                                 # TODO : Modules have remote_states that are required but not used. So although redundant they are required.
@@ -207,7 +213,13 @@ class TerraformCloudClient():
         headers = self._build_headers(organization.api_key.value)
         workspace_request_response = requests.get(
             self.base_url + f'/api/v2/organizations/{organization_name}/workspaces/{workspace_name}', headers=headers)
+
         response_json = workspace_request_response.json()
+
+        if 'errors' in response_json:
+            for error in response_json['errors']:
+                if error['status'] == '404' and error['title'] == 'not found':
+                    raise WorkspaceNotFoundException
 
         state_lookup_url = self.base_url + response_json['data']['relationships']['current-state-version']['links']['related']
         current_state, state_resources = self._get_current_state_and_resources(state_lookup_url, headers)
@@ -240,7 +252,9 @@ class TerraformCloudClient():
             if 'dependencies' in instance:
                 for dependency in [d for d in instance['dependencies'] if 'terraform_remote_state' in d]:
                     if dependency not in workspace_dict['depends_on']:
-                        raise Exception('Error parsing dependencies... missing terraform_remote_state referenced: ' + dependency)
+                        # raise Exception(f'Error parsing dependencies... missing terraform_remote_state referenced. Dependency: {dependency}. Workspace: {workspace_dict["name"]}')
+                        # Seems like an optional data in a module is classed as a dep, even though it is not used... so just log info this for now?
+                        logger.info(f'Error parsing dependencies... missing terraform_remote_state referenced. Dependency: {dependency}. Workspace: {workspace_dict["name"]}')
                     else:
                         workspace_dict['depends_on'][dependency]['redundant'] = False
                         # TODO : Modules have remote_states that are required but not used. So although redundant they are required.
@@ -282,8 +296,6 @@ class TerraformCloudClient():
             total_pages = 1
         else:
             total_pages = response_json['meta']['pagination']['total-pages']
-
-        tfcloud_client = TerraformCloudClient()
 
         # TODO : Handle an upper bound on this. Could be dangerous if not.
         for page_number in range(1, total_pages + 1):
@@ -347,7 +359,7 @@ class TerraformCloudClient():
             resources['resources'][namespace] = resource_info
         return resources
 
-    def state_revisions(self, workspace_name: str, organization_name: str, current_state_revision_id: str = None):
+    def state_revisions(self, workspace_name: str, organization_name: str, current_state_revision_id: str = None, total_local_revs: int = 0):
         """For the given workspace_id fetch all state revisions. Will only fetch revisions that aren't already
         known about.
 
@@ -357,7 +369,7 @@ class TerraformCloudClient():
             workspace_name: the name of the Terraform Cloud Workspace to fetch revisions for.
             organizaion_name: the name of the Terraform Cloud Organization to which the Workspace belongs.
             current_state_revision_id: the state Id for the most recent revision. Used to determine if anything needs to be done.
-        
+            total_local_revs: number of local revs, used to help determine if we need to update
         Returns
             A list of parsed state revisions information dicts in order from oldest to most recent.
             For example:
@@ -389,10 +401,9 @@ class TerraformCloudClient():
         states = []
         total_pages = 1
         state_ids_added = []
-
         if response.status_code == 200:
-            if current_state_revision_id == states_versions_response['data'][0]['id']:
-                # We are already up to date, so don't bother continueing. Early return.
+            if (current_state_revision_id == states_versions_response['data'][0]['id']):
+                # Assumes that they are always ordered? TODO : Does this account for weird state manipulations on the remote?
                 return []
 
             print(f'Fetching revisions for {workspace_name}, as local states are not up to date.')
@@ -419,7 +430,7 @@ class TerraformCloudClient():
             logger.info(f'Non 200 response fetching revisions for workspace {workspace_name}.')
         
         # Handle Pagination
-        for page_number in range(1, total_pages):
+        for page_number in range(1, total_pages + 1):
             logger.info(f'Fetching {page_number} page for workspace {workspace_name} revisions.')
             # TODO : Optimise this so that (1) not sequential, thread it but careful of parent id linking
             #        and (2) only runs if it needs to (if this is a refresh we shouldnt need all pages,
@@ -469,7 +480,7 @@ def _build_namespace(resource: dict):
     name = resource['name']
     resource_type = resource['type']
     is_data = True if resource['mode'] == 'data' else False
-    module = None
+    module = ''
     if 'module' in resource:
         module = resource['module']
         if '[' in module and resource['mode'] == 'data':

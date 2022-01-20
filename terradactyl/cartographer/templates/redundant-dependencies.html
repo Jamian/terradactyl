@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Terradactyl - Reports Terraform Versions</title>
+    <title>Terradactyl - Reports Redundant Dependencies</title>
 
     <!-- Custom fonts for this template-->
     <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet" type="text/css">
@@ -113,7 +113,7 @@
 
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800">Report - Terraform Versions</h1>
+                        <h1 class="h3 mb-0 text-gray-800">Report - Redundant Dependencies</h1>
                     </div>
                     <div class="row">
                         <div class="col-lg">
@@ -130,12 +130,13 @@
                         <br/>
                             <div class="table-responsive">
                                 <div id="dataTable_wrapper" class="dataTables_wrapper">
-                                <table class="table dataTable" id="tfVersionsDataTable" width="100%" cellspacing="0" role="grid" aria-describedby="dataTable_info">
+                                <table class="table dataTable" id="tfVersionsDataTable" width="100%" cellspacing="0" role="grid" aria-describedby="dataTable_info" style="width: 100%;">
                                     <thead>
                                         <tr role="row">
                                             <th>Workspace</th>
                                             <th>Organization</th>
-                                            <th>Terraform Version</th>
+                                            <th>Total Dependencies</th>
+                                            <th>Redundant Dependencies</th>
                                             <th>Actions</th>
                                     </thead>
                                     <tbody>
@@ -143,10 +144,10 @@
                                             <tr role="row">
                                                 <td>{{w.name}}</td>
                                                 <td>{{w.org_name}}</td>
-                                                <td>{{w.terraform_version}}</td>
+                                                <td>{{w.dependency_count}}</td>
+                                                <td>{{w.r_dependency_count}}</td>
                                                 <td>
                                                     <div class="btn btn-info disabled" @click="syncOrganization('{{org.name}}')" v-bind:class="{ disabled: syncBtnDisabled['{{org.name}}'] }">Synchronize</div>
-                                                    <div class="btn btn-info" onclick="window.open('https://app.terraform.io/app/{{w.org_name}}/workspaces/{{w.name}}', '_blank'); return false;">View in Terraform Cloud</div>
                                                     <div class="btn btn-info" onclick="window.open('/states/{{w.name}}', '_blank'); return false;">View Workspace</div>
                                                 </td>
                                             </tr>

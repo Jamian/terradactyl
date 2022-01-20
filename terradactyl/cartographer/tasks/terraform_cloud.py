@@ -10,7 +10,7 @@ from django.http import HttpResponse, JsonResponse
 
 from cartographer.gizmo.models import Resource, ResourceInstance, State, Workspace
 from cartographer.models import TerraformCloudAPIKey, TerraformCloudOrganization
-from cartographer.utils.terraform_cloud import TerraformCloudClient
+from cartographer.utils.terraform_cloud import TerraformCloudClient, WorkspaceNotFoundException
 from cartographer.gizmo.models.exceptions import VertexDoesNotExistException
 
 
@@ -71,7 +71,7 @@ def sync_resources(workspace_name):
                 dependency_r = Resource.vertices.get(namespace=dependency, state_id=current_revision.state_id)
                 r.depends_on(dependency_r)
             except VertexDoesNotExistException:
-                print(f'Could not find: {dependency}')
+                print(f'Could not find: {dependency} in {r_namespace}')
 
     print('----------------------------------------------------')
 
@@ -86,14 +86,16 @@ def sync_revisions(workspace_name: str, organization_name: str):
         workspace_name: the name of the Terraform Workspace to fetch all State revisions for.
         organization_name: the Terraform Organization name to which the workspace belongs.
     """
-    logger.debug('Fetching revisions...')
+    print('Fetching revisions...')
     tfc_client = TerraformCloudClient()
     workspace = Workspace.vertices.get(name=workspace_name, organization=organization_name)
     try:
         current_local_state_id = workspace.get_current_state_revision().state_id
     except VertexDoesNotExistException:
         current_local_state_id = None
-    sorted_state_revisions = tfc_client.state_revisions(workspace_name, organization_name, current_local_state_id)
+
+    total_local_revs = workspace.get_total_revision_count()
+    sorted_state_revisions = tfc_client.state_revisions(workspace_name, organization_name, current_local_state_id, total_local_revs)
     previous_state = None
     if len(sorted_state_revisions) > 0:
         for state_info in sorted_state_revisions:
@@ -109,7 +111,7 @@ def sync_revisions(workspace_name: str, organization_name: str):
                 this_state.succeeded(previous_state)
             previous_state = this_state
         total_revisions = len(sorted_state_revisions)
-        logger.debug(f'Created {total_revisions} for {workspace_name}...')
+        print(f'Created {total_revisions} revisions for {workspace_name}...')
 
 @shared_task
 def sync_workspace(workspace_name: str, organization_name: str):
@@ -121,49 +123,54 @@ def sync_workspace(workspace_name: str, organization_name: str):
 
     tfc_client = TerraformCloudClient()
     workspace = Workspace.vertices.get(name=workspace_name, organization=organization_name)
-    remote_workspace_chain_data = tfc_client.chain(workspace_name=workspace.name, organization_name=workspace.organization)
-    # First update or create all Vertices in the chain.
-    for workspace_id, workspace_info in remote_workspace_chain_data.items():
-        chain_workspace = Workspace.vertices.update_or_create(
-            name=workspace_info['name'],
-            workspace_id=workspace_id,
-            organization=workspace_info['organization_name'],
-            created_at=workspace_info['created_at']
-        )
-
-        if 'current_state' in workspace_info:
-            cs = State.vertices.update_or_create(
-                state_id=workspace_info['current_state']['state_id'],
-                serial=workspace_info['current_state']['serial'],
-                resource_count=workspace_info['current_state']['resource_count'],
-                terraform_version=workspace_info['current_state']['terraform_version'],
-                created_at=workspace_info['current_state']['created_at']
+    try:
+        remote_workspace_chain_data = tfc_client.chain(workspace_name=workspace.name, organization_name=workspace.organization)
+        # First update or create all Vertices in the chain.
+        for workspace_id, workspace_info in remote_workspace_chain_data.items():
+            chain_workspace = Workspace.vertices.update_or_create(
+                name=workspace_info['name'],
+                workspace_id=workspace_id,
+                organization=workspace_info['organization_name'],
+                created_at=workspace_info['created_at']
             )
-            chain_workspace.has_current_state(cs)
 
-    # Now that the vertices have been updated, we can add or remove any dependencies.
-    print('Handling dependencies as we have updated everything...')
-    for workspace_id, workspace_info in remote_workspace_chain_data.items():
-        updated_dependencies = []
-        chain_workspace = Workspace.vertices.get(name=workspace_info['name'], organization=workspace_info['organization_name'])
-        current_dependencies = chain_workspace.get_dependencies(redundant_only=False)
+            if 'current_state' in workspace_info:
+                cs = State.vertices.update_or_create(
+                    state_id=workspace_info['current_state']['state_id'],
+                    serial=workspace_info['current_state']['serial'],
+                    resource_count=workspace_info['current_state']['resource_count'],
+                    terraform_version=workspace_info['current_state']['terraform_version'],
+                    created_at=workspace_info['current_state']['created_at']
+                )
+                chain_workspace.has_current_state(cs)
 
-        for namespace, dep_info in workspace_info['depends_on'].items():
-            try:
-                rws = Workspace.vertices.get(name=dep_info['workspace_name'], organization=workspace_info['organization_name'])
-                chain_workspace.depends_on(rws, dep_info['redundant'])
-                updated_dependencies.append(rws.name)
-            except Exception as error:
-                logger.error(f'Error creating dependency for: {workspace_id}')
+        # Now that the vertices have been updated, we can add or remove any dependencies.
+        print('Handling dependencies as we have updated everything...')
+        for workspace_id, workspace_info in remote_workspace_chain_data.items():
+            updated_dependencies = []
+            chain_workspace = Workspace.vertices.get(name=workspace_info['name'], organization=workspace_info['organization_name'])
+            current_dependencies = chain_workspace.get_dependencies(redundant_only=False)
 
-        # Handle any dependencies that have been removed.
-        removed_dependencies = list(set(current_dependencies) - set(updated_dependencies))
-        for dependency in removed_dependencies:
-            ws_to_remove = Workspace.vertices.get(name=dependency)
-            logger.debug(f'Removing dependency... {dependency}')
-            chain_workspace.remove_dependency(ws_to_remove)
+            for namespace, dep_info in workspace_info['depends_on'].items():
+                try:
+                    rws = Workspace.vertices.get(name=dep_info['workspace_name'], organization=workspace_info['organization_name'])
+                    chain_workspace.depends_on(rws, dep_info['redundant'])
+                    updated_dependencies.append(rws.name)
+                except Exception as error:
+                    logger.error(f'Error creating dependency for: {workspace_id}')
 
-        sync_revisions(workspace_name=workspace_info['name'], organization_name=workspace_info['organization_name'])
+            # Handle any dependencies that have been removed.
+            removed_dependencies = list(set(current_dependencies) - set(updated_dependencies))
+            for dependency in removed_dependencies:
+                ws_to_remove = Workspace.vertices.get(name=dependency)
+                logger.debug(f'Removing dependency... {dependency}')
+                chain_workspace.remove_dependency(ws_to_remove)
+
+            print('Syncing revisions!!!!!')
+            sync_revisions(workspace_name=workspace_info['name'], organization_name=workspace_info['organization_name'])
+    except WorkspaceNotFoundException:
+        # Workspace didn't exist, probably deleted. Remove from local.
+        workspace.delete()
 
 
 @shared_task

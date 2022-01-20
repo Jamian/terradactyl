@@ -136,8 +136,6 @@ class Workspace(Vertex):
                                                                            'organization', 'name').toList()
             else:
                 raise VertexDoesNotExistException
-            print('Filter found: ', workspaces)
-            return workspaces
 
         @classmethod
         def drop_all(cls):
@@ -262,13 +260,15 @@ class Workspace(Vertex):
         """
         return Gizmo().g.V().has('workspace_id', self.workspace_id).outE('contains').count().next()
 
-    def get_dependency_count(self):
+    def get_dependency_count(self, redundant=False):
         """Count the number of Workspace Vertices that this Workspace depends on by counting the depends_on out Edges.
         
         Returns
             An integer count of the total dependencies.
         """
-        return Gizmo().g.V().has('workspace_id', self.workspace_id).outE('depends_on').count().next()
+
+        redundant_str = str(redundant).lower()
+        return Gizmo().g.V().has('workspace_id', self.workspace_id).outE('depends_on').has('redundant', redundant_str).count().next()
 
     def get_chain(self, vertices_only=False):
         """Fetches the full chain (all nodes connected directly or indirectly) to the current node.
@@ -368,6 +368,11 @@ class Workspace(Vertex):
 
         # Quick save to update last_updated.
         self.save()
+
+    def delete(self):
+        """Remove the Vertex that this Workspace represents from the database.
+        """
+        Gizmo().g.V(self.v).drop().iterate()
 
     def save(self):
         self.last_updated = str(datetime.datetime.utcnow().timestamp())

@@ -104,8 +104,10 @@ Vue.component('run-order-graph', {
             .attr("d", "M0,-5L10,0L0,5");
 
         // Add zoom
+        var x = d3.scaleLinear()
+            .domain([-this.width / 2, this.width / 2])
+            .range([0, this.width]);
         svg.call(d3.zoom()
-            .scaleExtent([1 / 4, 4])
             .on('zoom', this.zoomed))
 
         this.selections.graph = svg.append("g")
