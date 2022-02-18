@@ -1,0 +1,32 @@
+name: Security check - Bandit
+
+on: push
+
+jobs:
+  bandit-checks:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['pypi-3.9']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: 'x64'
+
+      - name: Create Env
+        run: pip install virtualenv && virtualenv venv
+
+      - name: Activate Env
+        run: . venv/bin/activate & echo $(python --version)
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt --upgrade pip
+      
+      - name: Install Bandit
+        run: pip install bandit
+  
+      - name: Run Bandit
+        run: bandit -r terradactyl/
