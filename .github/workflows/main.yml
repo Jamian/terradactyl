@@ -36,4 +36,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: bandit-results
-          path: bandit-results.json
+          path: bandit-results.html
