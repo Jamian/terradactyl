@@ -1,6 +1,10 @@
 <br/>
 <img src="terradactyl/cartographer/static/img/terradactyl-logo.svg" width=175em></img>
 <br/>
+<br/>
+
+![example workflow](https://github.com/jamian/terradactyl/actions/workflows/bandit.yml/badge.svg)
+
 <h1>Terradactyl</h1>
 
 Terradactyl provides a bird's eye view of your Terraform states by analysing your remote state files and parsing them into a Tinkerpop graph database. With this you can explore your state network, viewing individuals or identifiying dependencies. If you want to run a state, Terradactyl will even provide a path of dependencies to run first, based on their own, in order to get to where you want to be.
