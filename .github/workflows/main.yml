@@ -29,4 +29,19 @@ jobs:
         run: pip install bandit
   
       - name: Run Bandit
-        run: bandit -r terradactyl/
+        run: bandit -r terradactyl/ -f json -o bandit-report.json
+
+      - name: Check and Upload Results
+        run: |
+          RESULTS_LENGTH=$(cat bandit-report.json | jq '.results' | jq length)
+          if [ "$RESULTS_LENGTH" -eq "0" ]; then
+            echo "Checks passed."
+          else
+            echo "Bandit found one or more issues. See results."
+            exit 1
+          fi
+          - uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v2
+        with:
+          name: bandit-results
+          path: bandit-results.json
