@@ -31,7 +31,7 @@ def sync_resources(workspace_name):
     Args
         workspace_name: the name of the Terraform Cloud Workspace to load resources for.
     """
-    print(f'Loading resources for workspace: {workspace_name}...')
+    logger.info(f'Loading resources for workspace: {workspace_name}...')
     tfc_client = TerraformCloudClient()
 
     workspace = Workspace.vertices.get(name=workspace_name)
@@ -39,41 +39,45 @@ def sync_resources(workspace_name):
     resources_info = tfc_client.resources(workspace.organization, workspace_name)
     resources = resources_info['resources']
 
-
-    print('----------------------------------------------------')
-    print(f'Resources for {workspace_name}')
+    logger.debug(f'Handling resources for {workspace_name}')
     # First pass, create resources.
     for r_namespace, resource in resources.items():
         r = Resource.vertices.update_or_create(
             name=resource['name'],
             state_id=current_revision.state_id,
             namespace=r_namespace,
+            mode=resource['mode'],
             resource_type=resource['resource_type']
         )
-        for instance_index_key in resource['instances']:
-            # TODO : Do we need to store index namespace as well?
+
+        for instance in resource['instances']:
             ri = ResourceInstance.vertices.update_or_create(
-                index_key=instance_index_key,
+                index_key=instance['index_key'],
+                iid=instance['iid'],
                 state_id=current_revision.state_id,
                 resource_type=resource['resource_type']
             )
+            logger.debug(f'Adding instance {instance["iid"]} to {r.namespace}')
             ri.instance_of(r)
-            print(f'Added instance {instance_index_key} to {r_namespace}')
 
         current_revision.contains(r)
-        print(f'Added {r_namespace}')
 
     # Second pass, create dependencies.
-    for r_namespace, resource in resources.items():
-        for dependency in [dep for dep in resource['depends_on'] if 'terraform_remote_state' not in dep]:
-            r = Resource.vertices.get(name=resource['name'], state_id=current_revision.state_id)
-            try:
-                dependency_r = Resource.vertices.get(namespace=dependency, state_id=current_revision.state_id)
-                r.depends_on(dependency_r)
-            except VertexDoesNotExistException:
-                print(f'Could not find: {dependency} in {r_namespace}')
+    # TODO : Turn this back on - it's just too much to handle locally. DB becomes way too complex.
+    # for r_namespace, resource in resources.items():
+    #     try:
+    #         source_r = Resource.vertices.get(name=resource['name'], namespace=r_namespace, resource_type=resource['resource_type'], state_id=current_revision.state_id)
+    #     except VertexDoesNotExistException:
+    #         logger.warning(f'Unable to find resource {r_namespace} so no dependencies added.')
+    #         continue
+    #     for dependency in [dep for dep in resource['depends_on'] if 'terraform_remote_state' not in dep]:
+    #         try:
+    #             dependency_r = Resource.vertices.get(namespace=dependency, state_id=current_revision.state_id)
+    #             source_r.depends_on(dependency_r)
+    #         except VertexDoesNotExistException:
+    #             logger.warning(f'Could not find: {dependency} for {r_namespace} in {workspace_name}')
 
-    print('----------------------------------------------------')
+    logger.info(f'Finished processing resources for {workspace_name}')
 
 
 @shared_task
@@ -86,7 +90,7 @@ def sync_revisions(workspace_name: str, organization_name: str):
         workspace_name: the name of the Terraform Workspace to fetch all State revisions for.
         organization_name: the Terraform Organization name to which the workspace belongs.
     """
-    print('Fetching revisions...')
+    logger.info(f'Fetching revisions for workspace {workspace_name}...')
     tfc_client = TerraformCloudClient()
     workspace = Workspace.vertices.get(name=workspace_name, organization=organization_name)
     try:
@@ -111,7 +115,7 @@ def sync_revisions(workspace_name: str, organization_name: str):
                 this_state.succeeded(previous_state)
             previous_state = this_state
         total_revisions = len(sorted_state_revisions)
-        print(f'Created {total_revisions} revisions for {workspace_name}...')
+        logger.info(f'Created {total_revisions} revisions for {workspace_name}...')
 
 @shared_task
 def sync_workspace(workspace_name: str, organization_name: str):
@@ -121,6 +125,7 @@ def sync_workspace(workspace_name: str, organization_name: str):
         workspace: the Workspace object to synchronise with the remote in Terraform Cloud.
     """
 
+    logger.info(f'Syncing workspace {workspace_name}')
     tfc_client = TerraformCloudClient()
     workspace = Workspace.vertices.get(name=workspace_name, organization=organization_name)
     try:
@@ -145,7 +150,7 @@ def sync_workspace(workspace_name: str, organization_name: str):
                 chain_workspace.has_current_state(cs)
 
         # Now that the vertices have been updated, we can add or remove any dependencies.
-        print('Handling dependencies as we have updated everything...')
+        logger.debug('Handling dependencies as we have updated everything...')
         for workspace_id, workspace_info in remote_workspace_chain_data.items():
             updated_dependencies = []
             chain_workspace = Workspace.vertices.get(name=workspace_info['name'], organization=workspace_info['organization_name'])
@@ -166,7 +171,7 @@ def sync_workspace(workspace_name: str, organization_name: str):
                 logger.debug(f'Removing dependency... {dependency}')
                 chain_workspace.remove_dependency(ws_to_remove)
 
-            print('Syncing revisions!!!!!')
+            logger.debug('Syncing revisions!!!!!')
             sync_revisions(workspace_name=workspace_info['name'], organization_name=workspace_info['organization_name'])
     except WorkspaceNotFoundException:
         # Workspace didn't exist, probably deleted. Remove from local.

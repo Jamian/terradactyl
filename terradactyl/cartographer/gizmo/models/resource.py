@@ -18,15 +18,23 @@ class Resource(Vertex):
         label = LABEL
 
         @classmethod
-        def create(cls, state_id: str, name: str, resource_type: str, namespace: str):
+        def create(cls, state_id: str, name: str, resource_type: str, namespace: str, mode: str):
             last_updated = str(datetime.datetime.utcnow().timestamp())
             v = Gizmo().g.addV(Resource.label) \
                 .property('state_id', state_id) \
                 .property('name', name) \
                 .property('resource_type', resource_type) \
                 .property('namespace', namespace) \
+                .property('mode', mode) \
                 .property('last_updated', last_updated).next()
-            return Resource(v.id, state_id, name, resource_type, last_updated)
+            return Resource(
+                _id=v.id,
+                state_id=state_id,
+                name=name,
+                resource_type=resource_type,
+                namespace=namespace,
+                mode=mode,
+                last_updated=last_updated)
 
         @classmethod
         def get(cls, **kwargs):
@@ -51,55 +59,60 @@ class Resource(Vertex):
                     state_id=element_map['state_id'],
                     resource_type=element_map['resource_type'],
                     namespace=element_map['namespace'],
+                    mode=element_map['mode'],
                     last_updated=element_map['last_updated']
                 )
 
         @classmethod
-        def update_or_create(cls, state_id: str, name: str, resource_type: str, namespace: str):
+        def update_or_create(cls, state_id: str, name: str, resource_type: str, namespace: str, mode: str):
             try:
+                # TODO : This doesn't work for update - just get for now. Nothing to actually update on these.
                 r = Resource.vertices.get(
-                    name=name,
                     state_id=state_id,
-                    resource_type=resource_type)
-                r.state_id = state_id
-                r.name = name
-                r.namespace = namespace
-                r.resource_type = resource_type
-                r.save()
+                    name=name,
+                    namespace=namespace,
+                    resource_type=resource_type,
+                    mode=mode)
             except VertexDoesNotExistException:
                 r = Resource.vertices.create(
                     state_id=state_id,
                     name=name,
+                    namespace=namespace,
                     resource_type=resource_type,
-                    namespace=namespace
+                    mode=mode
                 )
             return r
 
     @property
     def v(self):
-        return Gizmo().g.V().has('state_id', self.state_id).has('name', self.name).has('resource_type', self.resource_type).next()
+        return Gizmo().g.V().has('state_id', self.state_id).has('namespace', self.namespace).has('resource_type', self.resource_type).next()
 
-    def __init__(self, _id: int, state_id: str, name: str, resource_type: str, namespace: str, last_updated: str = None):
+    def __init__(self, _id: int, state_id: str, name: str, resource_type: str, namespace: str, mode: str, last_updated: str = None):
         self._id = _id
         self.state_id = state_id
         self.name = name
         self.resource_type = resource_type
         self.namespace = namespace
+        self.mode = mode
         if last_updated:
             self.last_updated = last_updated
 
     def depends_on(self, target):
         """Creates an edge from the current resource to the target one.
-        
+
         Args:
             target: the Resource object that this Resource depends on.
         """
-        Gizmo().g.V(self.v).has('namespace', self.namespace).has('state_id', self.state_id).as_('v') \
-            .V(target.v).has('namespace', target.namespace).has('state_id', target.state_id).as_('t') \
-            .coalesce(
-            __.inE('r_depends_on').where(__.outV().as_('v')),
-            __.addE('r_depends_on').from_('v')
-        ).next()
+        try:
+            Gizmo().g.V(self.v).has('namespace', self.namespace).has('state_id', self.state_id).as_('v') \
+                .V(target.v).has('namespace', target.namespace).has('state_id', target.state_id).as_('t') \
+                .coalesce(
+                __.inE('r_depends_on').where(__.outV().as_('v')),
+                __.addE('r_depends_on').from_('v')
+            ).next()
+        except:
+            print(f'failed to add r_depends_on from {self.namespace} to {target.namespace}')
+        self.save()
 
     def get_dependencies(self):
         """Fetch a list of names of the Resource that this Resource depends on.
@@ -109,7 +122,7 @@ class Resource(Vertex):
     def get_instances(self):
         """Feth a list of ResourceInstance that this Resource is implemented by.
         """
-        return [ResourceInstace(
+        return [ResourceInstance(
             index_key=r['index_key'],
             state_id=r['state_id'],
             resource_type=r['resource_type']
@@ -121,4 +134,5 @@ class Resource(Vertex):
             .property('state_id', self.state_id) \
             .property('resource_type', self.resource_type) \
             .property('namespace', self.namespace) \
+            .property('mode', self.mode) \
             .property('last_updated', self.last_updated).next()

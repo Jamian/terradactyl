@@ -327,26 +327,29 @@ class TerraformCloudClient():
 
         known_data_deps = []   # Store a list of data dependencies as they're seen so that we can check for redundant cross state dependencies.
 
-        managed_resources = [r for r in state_resources if r['mode'] == 'managed']
-
-        for resource in managed_resources:
+        for resource in state_resources:
             namespace = _build_namespace(resource)
             resource_info = {
                 'name': resource['name'],
                 'resource_type': resource['type'],
                 'namespace': namespace,
+                'mode': resource['mode'],
                 'instances': [],
                 'depends_on': []
             }
-            for instance in resource['instances']:
+            for instance in [ i for i in resource['instances'] if (resource['mode'] != 'data' and resource['type'] != 'terraform_remote_state')]:
                 if 'index_key' not in instance:
                     # If a resource doesn't have instances (is singular anyway) then there is no key.
                     # To make our life easier we'll just default these to _default.
                     # TODO : This is probably misleading, should maybe remove this?
+                    # Do we still need this or just go TF 1+ support only?
                     index_key = '_default'
                 else:
                     index_key = instance['index_key']
-                resource_info['instances'].append(index_key)
+                resource_info['instances'].append({
+                    'index_key': index_key,
+                    'iid': instance['attributes']['id']
+                })
                 if 'dependencies' in instance:
                     for dependency in instance['dependencies']:
                         # For now let's just show deps for the parent resource, rather than each instance.
@@ -406,7 +409,7 @@ class TerraformCloudClient():
                 # Assumes that they are always ordered? TODO : Does this account for weird state manipulations on the remote?
                 return []
 
-            print(f'Fetching revisions for {workspace_name}, as local states are not up to date.')
+            logger.debug(f'Fetching revisions for {workspace_name}, as local states are not up to date.')
             if 'meta' in states_versions_response:
                 if 'pagination' in states_versions_response['meta']:
                     total_pages = states_versions_response['meta']['pagination']['total-pages']
@@ -459,6 +462,8 @@ class TerraformCloudClient():
                     if state_version_info['id'] not in state_ids_added:
                         states.append(state_info)
                         state_ids_added.append(state_version_info['id'])
+                    else:
+                        logger.info(f'Stopping revision fetch for {workspace_name}. Found all new revisions. Local is now up to date.')
             else:
                 logger.info(f'Non 200 response {response.status_code} fetching revisions for workspace revision pagination {workspace_name}.')
         

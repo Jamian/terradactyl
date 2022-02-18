@@ -111,8 +111,8 @@ class State(Vertex):
     def contains(self, target_resource):
         """Creates a edge from the current state to the target resource.
         """
-        Gizmo().g.V(self.v).has('state_id', self.state_id).as_('v') \
-            .V(target_resource.v).has('name', target_resource.name).has('resource_type', target_resource.resource_type).has('state_id', target_resource.state_id).as_('t') \
+        Gizmo().g.V(self.v).as_('v') \
+            .V(target_resource.v).as_('t') \
             .coalesce(
             __.inE('contains').where(__.outV().as_('v')),
             __.addE('contains').from_('v')

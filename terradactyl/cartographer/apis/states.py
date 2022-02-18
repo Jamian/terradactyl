@@ -75,7 +75,7 @@ def get_states(request):
             'created_at': humanize_created_at(ws.created_at),
             'last_updated': ws.last_updated
         })
-    print('Starting deps')
+
     for i, node in enumerate(data['nodes']):
         # Add non redundanut dependencies
         for name in Workspace.vertices.get(name=node['name']).get_dependencies(required_only=True):
@@ -95,7 +95,7 @@ def get_states(request):
                 'value': 1,
                 'type': 'depends_on'
             })
-    print('Done!')
+
     return JsonResponse(data)
 
 

@@ -16,7 +16,7 @@ from django.http import JsonResponse
 from gremlin_python.process.traversal import T
 
 from cartographer.gizmo import Gizmo
-from cartographer.gizmo.models import Resource, Workspace
+from cartographer.gizmo.models import Resource, ResourceInstance, Workspace
 from cartographer.gizmo.models.exceptions import VertexDoesNotExistException
 
 
@@ -100,15 +100,20 @@ def states(request):
         'labels': json.dumps([k for k in terraform_version_dist.keys()])
     }
 
-    resource_type_dist = Resource.vertices.count_by('resource_type')
+    resource_type_dist = ResourceInstance.vertices.count_by('resource_type')
+    resource_type_dist['terraform_remote_state'] = 0
     sorted_resource_type_dist = dict(sorted(resource_type_dist.items(), key=lambda item: item[1], reverse=True)) 
     charts_data_resource_distribution = {
         'data': json.dumps([d for d in sorted_resource_type_dist.values()]),
         'labels': json.dumps([k for k in sorted_resource_type_dist.keys()])
     }
 
-    workspaces = Workspace.vertices.all()
-    charts_data_growth, resource_count = _generate_growth_chart_data(workspaces)
+    # workspaces = Workspace.vertices.all()
+    # FIXME : This now takes too long to do, pull it out into an API?
+    charts_data_growth, resource_count = {
+        'data': [],
+        'labels': []
+    }, ResourceInstance.vertices.count()  # TODO : This needs to exclude terraform_remote_state?
 
     return render(request, 'states.html', {
         'stats': {

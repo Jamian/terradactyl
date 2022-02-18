@@ -58,11 +58,11 @@ def daily_change(request):
             else:
                 data['daily_change'][seconds] += 1
 
-            if created_date.year == 2021:
-                if month_year not in data['stats']:
-                    data['stats'][month_year] = 1
-                else:
-                    data['stats'][month_year] += 1
+            # if created_date.year == 2021:
+            if month_year not in data['stats']:
+                data['stats'][month_year] = 1
+            else:
+                data['stats'][month_year] += 1
 
     total_months = len(data['stats'])
     total_applies = sum(data['stats'].values())
