@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['pypy-3.9']
+        python-version: ['pypy-3.8']
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
