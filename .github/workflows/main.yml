@@ -35,5 +35,5 @@ jobs:
         if: ${{ success() || failure() }}
         uses: actions/upload-artifact@v2
         with:
-          name: bandit-results
-          path: bandit-results.html
+          name: bandit-report
+          path: bandit-report.html
