@@ -8,6 +8,8 @@ from cartographer.models import TerraformCloudOrganization
 
 logger = logging.getLogger(__name__)
 
+PAGE_SIZE = 100 # TODO : Get from settings?
+
 class WorkspaceNotFoundException(Exception):
     """Raised when an attempt to fetch Workspace info from Terraform Cloud
     results in a returned 404 and 'not found' message.
@@ -50,59 +52,64 @@ class TerraformCloudClient():
             page_number: the pagination page number that this function call will fetch (as it usually runs threaded).
             workspaces: the dict to update with the fetched workspaces.
         """
-        pagination_url = f'https://app.terraform.io/api/v2/organizations/{organization_name}/workspaces?page%5Bnumber%5D={page_number}&page%5Bsize%5D=20'
+        pagination_url = f'https://app.terraform.io/api/v2/organizations/{organization_name}/workspaces?page%5Bnumber%5D={page_number}&page%5Bsize%5D={PAGE_SIZE}'
         workspaces_response = requests.get(pagination_url, headers=headers)
         response_json = workspaces_response.json()
-        for workspace_json in response_json['data']:
-            try:
-                workspace = {}
-                workspace['id'] = workspace_json['id']
-                workspace['name'] = workspace_json['attributes']['name']
-                workspace['organization'] = organization_name
-                workspace['created_at'] = parse_tf_datetime_str(workspace_json['attributes']['created-at']).timestamp()
-                workspace['depends_on'] = {}
+        try:
+            for workspace_json in response_json['data']:
+                try:
+                    workspace = {}
+                    workspace['id'] = workspace_json['id']
+                    workspace['name'] = workspace_json['attributes']['name']
+                    workspace['organization'] = organization_name
+                    workspace['created_at'] = parse_tf_datetime_str(workspace_json['attributes']['created-at']).timestamp()
+                    workspace['depends_on'] = {}
 
-                if not 'links' in workspace_json['relationships']['current-state-version']:
-                    # Quick break here for empty workspaces.
-                    workspaces[workspace['id']] = workspace
-                    continue
+                    if not 'links' in workspace_json['relationships']['current-state-version']:
+                        # Quick break here for empty workspaces.
+                        workspaces[workspace['id']] = workspace
+                        continue
 
-                state_lookup_url = self.base_url + workspace_json['relationships']['current-state-version']['links']['related']
+                    state_lookup_url = self.base_url + workspace_json['relationships']['current-state-version']['links']['related']
 
-                # Handle resource statistics
-                current_state, state_resources = self._get_current_state_and_resources(state_lookup_url, headers)
+                    # Handle resource statistics
+                    current_state, state_resources = self._get_current_state_and_resources(state_lookup_url, headers)
 
-                workspace['current_state'] = current_state
+                    workspace['current_state'] = current_state
 
-                data_resources = [r for r in state_resources if (r['mode'] == 'data' and r['type'] == 'terraform_remote_state')]
-                for dr in [dr for dr in data_resources if len(dr['instances']) > 0]:
-                    # TODO : Is the hard coded 0 good enough? Not sure of multiple instances use cases.
-                    namespace = _build_namespace(dr)
+                    data_resources = [r for r in state_resources if (r['mode'] == 'data' and r['type'] == 'terraform_remote_state')]
+                    for dr in [dr for dr in data_resources if len(dr['instances']) > 0]:
+                        # TODO : Is the hard coded 0 good enough? Not sure of multiple instances use cases.
+                        namespace = _build_namespace(dr)
 
-                    workspace_name = dr['instances'][0]['attributes']['config']['value']['workspaces']['name']
-                    if namespace not in workspace['depends_on']:
-                        redundant = False if 'module' in dr else True
-                        workspace['depends_on'][namespace] = {
-                            'workspace_name': workspace_name,
-                            'organization': dr['instances'][0]['attributes']['config']['value']['organization'],
-                            'redundant': redundant
-                            # TODO : Modules have remote_states that are required but not used. So although redundant they are required.
-                        }
-                managed_resources = [r for r in state_resources if r['mode'] == 'managed']
-                for r in [r for r in managed_resources if len(r['instances']) > 0]:
-                    instance = r['instances'][0]   # TODO : Is this sufficient, do all instances all share the same dependencies?
-                    if 'dependencies' in instance:
-                        for dependency in [d for d in instance['dependencies'] if 'terraform_remote_state' in d]:
-                            if dependency not in workspace['depends_on']:
-                                raise Exception(f'Error parsing dependencies... missing terraform_remote_state referenced. Dependency: {dependency}. Workspace: {workspace["name"]}')
-                            else:
-                                workspace['depends_on'][dependency]['redundant'] = False
+                        workspace_name = dr['instances'][0]['attributes']['config']['value']['workspaces']['name']
+                        if namespace not in workspace['depends_on']:
+                            redundant = False if 'module' in dr else True
+                            workspace['depends_on'][namespace] = {
+                                'workspace_name': workspace_name,
+                                'organization': dr['instances'][0]['attributes']['config']['value']['organization'],
+                                'redundant': redundant
                                 # TODO : Modules have remote_states that are required but not used. So although redundant they are required.
-                workspaces[workspace['name']] = workspace
-            except Exception as error:
-                workspace_name = workspace['name']
-                logger.warning(f'An error occurred fetching workspaces. Error parsing: {workspace_name}. Error: {error}.')
-                continue
+                            }
+                    managed_resources = [r for r in state_resources if r['mode'] == 'managed']
+                    for r in [r for r in managed_resources if len(r['instances']) > 0]:
+                        instance = r['instances'][0]   # TODO : Is this sufficient, do all instances all share the same dependencies?
+                        if 'dependencies' in instance:
+                            for dependency in [d for d in instance['dependencies'] if 'terraform_remote_state' in d]:
+                                if dependency not in workspace['depends_on']:
+                                    # Just log and continue. TODO : Could we make these links and highlight they're potentially off? This can occurr when a data lookup in the module is for_each'd into being conditional.
+                                    logger.warning(f'Missing terraform_remote_state referenced in Workspace: {workspace["name"]}. Dependency: {dependency}.')
+                                else:
+                                    workspace['depends_on'][dependency]['redundant'] = False
+                                    # TODO : Modules have remote_states that are required but not used. So although redundant they are required.
+                    workspaces[workspace['name']] = workspace
+                except Exception as error:
+                    workspace_name = workspace['name']
+                    logger.warning(f'An error occurred fetching workspace {workspace_name}. Error: {error}.')
+                    continue
+        except Exception as error:
+            logger.warning(f'An error occurred fetching workspaces for Organization: {organization_name}. Error: {error}.')
+
 
     def _get_current_state_and_resources(self, state_lookup_url, headers):
         """Fetches the current state and returns information about it along with
@@ -287,8 +294,10 @@ class TerraformCloudClient():
             name=organization_name)
 
         headers = self._build_headers(organization.api_key.value)
+        # TODO : Settingsify the page size?
+        # TODO : Handle an upper bound on this due to the threading.
         initial_request_response = requests.get(
-            self.base_url + f'/api/v2/organizations/{organization_name}/workspaces', headers=headers)
+            self.base_url + f'/api/v2/organizations/{organization_name}/workspaces?page%5Bsize%5D={PAGE_SIZE}', headers=headers)
         response_json = initial_request_response.json()
 
         threads = []
@@ -297,16 +306,16 @@ class TerraformCloudClient():
         else:
             total_pages = response_json['meta']['pagination']['total-pages']
 
-        # TODO : Handle an upper bound on this. Could be dangerous if not.
+        logger.info(f'Fetching {total_pages} pages worth of Workspaces for Organization {organization_name}')
         for page_number in range(1, total_pages + 1):
-            process = threading.Thread(target=self._get_workspaces_page, args=[
-                                       organization_name, headers, page_number, workspaces])
+            process = threading.Thread(target=self._get_workspaces_page, args=[organization_name, headers, page_number, workspaces])
             process.start()
             threads.append(process)
 
         for process in threads:
             process.join()
 
+        logger.info(f'Parsed {len(workspaces)} workspaces.')
         return workspaces
 
     def resources(self, organization_name, workspace_name):

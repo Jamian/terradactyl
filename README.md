@@ -37,3 +37,55 @@ Below show the two main screens - viewing your overall and individual state netw
 3. Start the TinkerPOP Gremlin server - `docker run -p 8182:8182 -d --name terradactyl-gremlin tinkerpop/gremlin-server:3.4.10`
 3. Start the Django sync web worker: `cd terradactyl && python manage.py runserver`
 4. Start the async worker: `cd terradactyl && celery -A terradactyl worker -l INFO`
+
+## Known Issues
+
+### Conditional Data Lookups
+If a `data.terraform_remote_state` resource is created based on some condition, then the Terraform Remote State will not include the resource object when the condition evaluates to `false`. It will still however falsely identify it as a dependency on the resource that references it. In the following example, when `var.bob_required` is `false` then the data lookup `bob_ross` is not created. It is still however a dependency in the Terraform state within the `painting.this` definition.
+
+```
+data "terraform_remote_state" "bob_ross" {
+  count   = var.bob_required ? 1 : 0
+  backend = "remote"
+  config = {
+    organization = "JamieCo"
+    workspaces = {
+      name = "bob_ross_painter"
+    }
+  }
+}
+
+resource "painting" "this" {
+    objects = var.bob_required ? [data.terraform_remote_state.bob_ross.outputs.happy_little_tree] : []
+}
+```
+The state json will look something like this, note the value in the dependencies list.
+```
+{
+    "version": 4,
+    "terraform_version": "1.2.1",
+    "serial": 1,
+    "lineage": "d08f55c8-bf62-4552-a728-1e86f98500c3",
+    "resources": [
+        {
+            "mode": "managed",
+            "type": "painting",
+            "name": "this",
+            "provider": "provider[\"registry.terraform.io/jamie/bob_ross_painting\"]",
+            "instances": [
+                {
+                    "schema_version": 0,
+                    "attributes": {
+                        "objects": []
+                    },
+                    "sensitive_attributes": [],
+                    "private": "xXXXxX==",
+                    "dependencies": [
+                        "data.terraform_remote_state.bob_ross"
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```

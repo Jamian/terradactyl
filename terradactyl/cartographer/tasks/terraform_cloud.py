@@ -1,9 +1,4 @@
-import datetime
-import os
-import json
 import logging
-import requests
-import threading
 
 from celery import shared_task
 from django.http import HttpResponse, JsonResponse
@@ -162,7 +157,7 @@ def sync_workspace(workspace_name: str, organization_name: str):
                     chain_workspace.depends_on(rws, dep_info['redundant'])
                     updated_dependencies.append(rws.name)
                 except Exception as error:
-                    logger.error(f'Error creating dependency for: {workspace_id}')
+                    logger.error(f'Error creating dependency for: {workspace_id} - {error}')
 
             # Handle any dependencies that have been removed.
             removed_dependencies = list(set(current_dependencies) - set(updated_dependencies))
@@ -182,6 +177,7 @@ def sync_workspace(workspace_name: str, organization_name: str):
 def load_workspaces(org_names=[], do_sync_revisions=True, do_sync_resources=True):
     """Calls Terraform Cloud to fetch all Workspaces for the given
     list of org_names or if none provided, all organizations in the database.
+    Orchestrates a celery chain to ensure all Workspaces are loaded and then dependencies created.
 
     Args
         org_names: list of TerraformCloudOrganization names to load. If empty then all workspaces
@@ -190,6 +186,7 @@ def load_workspaces(org_names=[], do_sync_revisions=True, do_sync_resources=True
         do_sync_resources: if True then all resources are loaded for each Workspace's current state (not all states).
     """
     tfc_client = TerraformCloudClient()
+
     # TODO : Handle name conflicts across ORGS! Currntly only a single org DB works.
     org_workspaces = {}
     if not org_names:
