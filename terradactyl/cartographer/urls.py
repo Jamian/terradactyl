@@ -11,7 +11,8 @@ urlpatterns = [
     path('logout', auth.logout, name='logout'),
     path('states', states_view.states, name='states'),
     path('states/<state_name>', states_view.state, name='states'),
-    path('remotes/terraform-cloud', remotes.remotes_terraform_cloud, name='remotes-terraform-cloud'),
+    path('organizations', remotes.organizations, name='organizations'),
+    path('organizations/<organization_name>', remotes.organization, name='organization'),
     path('reports/terraform-versions', reports_view.terraform_versions, name='reports-terraform-versions'),
     path('reports/redundant-dependencies', reports_view.redundant_dependencies, name='reports-redundant-dependencies'),
 

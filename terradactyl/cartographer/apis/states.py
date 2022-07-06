@@ -266,7 +266,6 @@ def get_state_run_order(request, state_name):
     G = nx.DiGraph(workspace_dependencies)
     H = nx.path_graph(workspace_dependencies)
     G.add_nodes_from(H)
-    print(G.graph)
     run_order = list(reversed(list(nx.topological_sort(G))))
 
     # Fromate the data block that d3 will use, create nodes and links.

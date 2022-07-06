@@ -1,15 +1,10 @@
-import datetime
-import os
 import json
 import logging
-import requests
-import threading
 
 from django.http import HttpResponse, JsonResponse
 
-from cartographer.gizmo.models import Resource, Workspace
 from cartographer.models import TerraformCloudAPIKey, TerraformCloudOrganization
-from cartographer.tasks.terraform_cloud import load_workspaces
+from cartographer.tasks.terraform_cloud import sync_organization
 
 
 BASE_URL = 'https://app.terraform.io'
@@ -52,12 +47,17 @@ def terraform_cloud_api_keys(request):
 
 
 def _get_terraform_cloud_organizations(request):
-    # This should be handed off to an Async Service.
+    # TODO : This should be synch org. Or Refresh/Sync = true?
     org_names = request.GET.get('organizations', None)
     if org_names:
         org_names = org_names.split(',')
 
-    load_workspaces.delay(org_names=org_names)
+    # Sync Organization
+      # Get a list of Workspaces
+        # For each workspace, create the node (group 1)
+        # task.delay : pull state and update node with info / dependencies (can't complete until group 1 is done)
+    for org_name in org_names:
+        sync_organization.delay(org_name)
 
     return HttpResponse(status=200)
 

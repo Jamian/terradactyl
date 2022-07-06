@@ -145,3 +145,5 @@ static
 
 examples/*
 .vscode
+
+bandit*

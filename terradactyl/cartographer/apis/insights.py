@@ -1,15 +1,6 @@
 import datetime
-import math
-import os
-import pytz
-import json
 import logging
-import threading
 
-import humanize
-import networkx as nx
-
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.http import HttpResponse, JsonResponse

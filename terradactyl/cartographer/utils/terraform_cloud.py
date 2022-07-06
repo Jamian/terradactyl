@@ -37,23 +37,23 @@ class TerraformCloudClient():
     """
     base_url = 'https://app.terraform.io'
 
-    def _build_headers(self, api_key):
-        return {
+    def __init__(self, api_key):
+        self._api_key = api_key
+        self._headers = {
             'Authorization': 'Bearer ' + api_key,
             'Content-Type': 'application/vnd.api+jso'
         }
 
-    def _get_workspaces_page(self, organization_name, headers, page_number, workspaces):
+    def _get_workspaces_page(self, organization_name, page_number, workspaces):
         """Follow a paginated link based on given page_number and parse the Workspace information.
 
         Args
             organization_name: the name of the Terraform Cloud Organiziation to fetch the workspaces for.
-            headers: the headers required for the requesto fetch paginated workspaces.
             page_number: the pagination page number that this function call will fetch (as it usually runs threaded).
             workspaces: the dict to update with the fetched workspaces.
         """
         pagination_url = f'https://app.terraform.io/api/v2/organizations/{organization_name}/workspaces?page%5Bnumber%5D={page_number}&page%5Bsize%5D={PAGE_SIZE}'
-        workspaces_response = requests.get(pagination_url, headers=headers)
+        workspaces_response = requests.get(pagination_url, headers=self._headers)
         response_json = workspaces_response.json()
         try:
             for workspace_json in response_json['data']:
@@ -63,46 +63,7 @@ class TerraformCloudClient():
                     workspace['name'] = workspace_json['attributes']['name']
                     workspace['organization'] = organization_name
                     workspace['created_at'] = parse_tf_datetime_str(workspace_json['attributes']['created-at']).timestamp()
-                    workspace['depends_on'] = {}
-
-                    if not 'links' in workspace_json['relationships']['current-state-version']:
-                        # Quick break here for empty workspaces.
-                        workspaces[workspace['id']] = workspace
-                        continue
-
-                    state_lookup_url = self.base_url + workspace_json['relationships']['current-state-version']['links']['related']
-
-                    # Handle resource statistics
-                    current_state, state_resources = self._get_current_state_and_resources(state_lookup_url, headers)
-
-                    workspace['current_state'] = current_state
-
-                    data_resources = [r for r in state_resources if (r['mode'] == 'data' and r['type'] == 'terraform_remote_state')]
-                    for dr in [dr for dr in data_resources if len(dr['instances']) > 0]:
-                        # TODO : Is the hard coded 0 good enough? Not sure of multiple instances use cases.
-                        namespace = _build_namespace(dr)
-
-                        workspace_name = dr['instances'][0]['attributes']['config']['value']['workspaces']['name']
-                        if namespace not in workspace['depends_on']:
-                            redundant = False if 'module' in dr else True
-                            workspace['depends_on'][namespace] = {
-                                'workspace_name': workspace_name,
-                                'organization': dr['instances'][0]['attributes']['config']['value']['organization'],
-                                'redundant': redundant
-                                # TODO : Modules have remote_states that are required but not used. So although redundant they are required.
-                            }
-                    managed_resources = [r for r in state_resources if r['mode'] == 'managed']
-                    for r in [r for r in managed_resources if len(r['instances']) > 0]:
-                        instance = r['instances'][0]   # TODO : Is this sufficient, do all instances all share the same dependencies?
-                        if 'dependencies' in instance:
-                            for dependency in [d for d in instance['dependencies'] if 'terraform_remote_state' in d]:
-                                if dependency not in workspace['depends_on']:
-                                    # Just log and continue. TODO : Could we make these links and highlight they're potentially off? This can occurr when a data lookup in the module is for_each'd into being conditional.
-                                    logger.warning(f'Missing terraform_remote_state referenced in Workspace: {workspace["name"]}. Dependency: {dependency}.')
-                                else:
-                                    workspace['depends_on'][dependency]['redundant'] = False
-                                    # TODO : Modules have remote_states that are required but not used. So although redundant they are required.
-                    workspaces[workspace['name']] = workspace
+                    workspaces.append(workspace)
                 except Exception as error:
                     workspace_name = workspace['name']
                     logger.warning(f'An error occurred fetching workspace {workspace_name}. Error: {error}.')
@@ -111,12 +72,12 @@ class TerraformCloudClient():
             logger.warning(f'An error occurred fetching workspaces for Organization: {organization_name}. Error: {error}.')
 
 
-    def _get_current_state_and_resources(self, state_lookup_url, headers):
+    def get_current_state_and_resources(self, state_lookup_path):
         """Fetches the current state and returns information about it along with
         a list of it's resources, parsed straight out of the state file for further parsing.
         
         Args
-            state_lookup_url: the Terraform Cloud API url to fetch the current state version
+            state_lookup_path: the Terraform Cloud API path to fetch the current state version.
         Returns
             current_state: dict of current_state that contains parsed metadata about the state, for example:
                 {
@@ -128,12 +89,13 @@ class TerraformCloudClient():
                 }
             state_resources: list of resources lifted straight from the state file
         """
-        state_response = requests.get(state_lookup_url, headers=headers)
+        state_lookup_url = self.base_url + state_lookup_path
+        state_response = requests.get(state_lookup_url, headers=self._headers)
         state_response_json = state_response.json()
 
         hosted_state_dl_url = state_response_json['data']['attributes']['hosted-state-download-url']
 
-        state_response = requests.get(hosted_state_dl_url)
+        state_response = requests.get(hosted_state_dl_url, self._headers)
         state = state_response.json()
 
         current_state = {}
@@ -147,6 +109,7 @@ class TerraformCloudClient():
             current_state['resource_count'] += len(resource['instances'])
 
         return current_state, state['resources']
+
 
     def chain(self, workspace_name: str, organization_name: str):
         """Fetch the full chain of Workspaces directly or indirectly related to the given workspace.
@@ -215,11 +178,7 @@ class TerraformCloudClient():
         """
 
         workspace_dict = {}
-        organization = TerraformCloudOrganization.objects.get(
-            name=organization_name)
-        headers = self._build_headers(organization.api_key.value)
-        workspace_request_response = requests.get(
-            self.base_url + f'/api/v2/organizations/{organization_name}/workspaces/{workspace_name}', headers=headers)
+        workspace_request_response = requests.get(self.base_url + f'/api/v2/organizations/{organization_name}/workspaces/{workspace_name}', headers=self._headers)
 
         response_json = workspace_request_response.json()
 
@@ -228,46 +187,54 @@ class TerraformCloudClient():
                 if error['status'] == '404' and error['title'] == 'not found':
                     raise WorkspaceNotFoundException
 
-        state_lookup_url = self.base_url + response_json['data']['relationships']['current-state-version']['links']['related']
-        current_state, state_resources = self._get_current_state_and_resources(state_lookup_url, headers)
+        try:
+            workspace_dict['id'] = response_json['data']['id']
+        except KeyError as e:
+            logger.error('KeyError when looking up data in Workspace response.')
+            logger.debug(response_json)
+            logger.debug(workspace_request_response.status_code)
 
-        workspace_dict['id'] = response_json['data']['id']
         workspace_dict['name'] = response_json['data']['attributes']['name']
-        workspace_dict['current_state'] = current_state
         workspace_dict['organization_name'] = organization_name
         workspace_dict['created_at'] = parse_tf_datetime_str(response_json['data']['attributes']['created-at'])
-        workspace_dict['depends_on'] = {}
 
-        # TODO : Refactor this into a function as well
-        data_resources = [r for r in state_resources if (r['mode'] == 'data' and r['type'] == 'terraform_remote_state')]
-        for dr in [dr for dr in data_resources if len(dr['instances']) > 0]:
-            # TODO : Is the hard coded 0 good enough? Not sure of multiple instances use cases.
-            namespace = _build_namespace(dr)
+        try:
+            state_lookup_path = response_json['data']['relationships']['current-state-version']['links']['related']
+            current_state, state_resources = self.get_current_state_and_resources(state_lookup_path)
+            workspace_dict['depends_on'] = {}
+            workspace_dict['current_state'] = current_state
 
-            workspace_name = dr['instances'][0]['attributes']['config']['value']['workspaces']['name']
-            if namespace not in workspace_dict['depends_on']:
-                redundant = False if 'module' in dr else True
-                workspace_dict['depends_on'][namespace] = {
-                    'workspace_name': workspace_name,
-                    'organization': dr['instances'][0]['attributes']['config']['value']['organization'],
-                    'redundant': redundant
-                    # TODO : Modules have remote_states that are required but not used. So although redundant they are required.
-                }
-        managed_resources = [r for r in state_resources if r['mode'] == 'managed']
-        for r in [r for r in managed_resources if len(r['instances']) > 0]:
-            instance = r['instances'][0]   # TODO : Is this sufficient, do all instances all share the same dependencies?
-            if 'dependencies' in instance:
-                for dependency in [d for d in instance['dependencies'] if 'terraform_remote_state' in d]:
-                    if dependency not in workspace_dict['depends_on']:
-                        # raise Exception(f'Error parsing dependencies... missing terraform_remote_state referenced. Dependency: {dependency}. Workspace: {workspace_dict["name"]}')
-                        # Seems like an optional data in a module is classed as a dep, even though it is not used... so just log info this for now?
-                        logger.info(f'Error parsing dependencies... missing terraform_remote_state referenced. Dependency: {dependency}. Workspace: {workspace_dict["name"]}')
-                    else:
-                        workspace_dict['depends_on'][dependency]['redundant'] = False
+            # TODO : Refactor this into a function as well
+            data_resources = [r for r in state_resources if (r['mode'] == 'data' and r['type'] == 'terraform_remote_state')]
+            for dr in [dr for dr in data_resources if len(dr['instances']) > 0]:
+                # TODO : Is the hard coded 0 good enough? Not sure of multiple instances use cases.
+                namespace = build_namespace(dr)
+
+                workspace_name = dr['instances'][0]['attributes']['config']['value']['workspaces']['name']
+                if namespace not in workspace_dict['depends_on']:
+                    redundant = False if 'module' in dr else True
+                    workspace_dict['depends_on'][namespace] = {
+                        'workspace_name': workspace_name,
+                        'organization': dr['instances'][0]['attributes']['config']['value']['organization'],
+                        'redundant': redundant
                         # TODO : Modules have remote_states that are required but not used. So although redundant they are required.
-
+                    }
+            managed_resources = [r for r in state_resources if r['mode'] == 'managed']
+            for r in [r for r in managed_resources if len(r['instances']) > 0]:
+                instance = r['instances'][0]   # TODO : Is this sufficient, do all instances all share the same dependencies?
+                if 'dependencies' in instance:
+                    for dependency in [d for d in instance['dependencies'] if 'terraform_remote_state' in d]:
+                        if dependency not in workspace_dict['depends_on']:
+                            # raise Exception(f'Error parsing dependencies... missing terraform_remote_state referenced. Dependency: {dependency}. Workspace: {workspace_dict["name"]}')
+                            # Seems like an optional data in a module is classed as a dep, even though it is not used... so just log info this for now?
+                            logger.debug(f'Error parsing dependencies... missing terraform_remote_state referenced. Dependency: {dependency}. Workspace: {workspace_dict["name"]}')
+                        else:
+                            workspace_dict['depends_on'][dependency]['redundant'] = False
+                            # TODO : Modules have remote_states that are required but not used. So although redundant they are required.
+        except KeyError:
+            logger.debug('Skipped empty Workspace.')
+            
         return workspace_dict
-
 
     def workspaces(self, organization_name: str):
         """Fetch all workspaces for an organization, parse them and return a dict with the key as workspace
@@ -289,18 +256,10 @@ class TerraformCloudClient():
             }
 
         """
-        workspaces = {}
-        organization = TerraformCloudOrganization.objects.get(
-            name=organization_name)
-
-        headers = self._build_headers(organization.api_key.value)
-        # TODO : Settingsify the page size?
-        # TODO : Handle an upper bound on this due to the threading.
-        initial_request_response = requests.get(
-            self.base_url + f'/api/v2/organizations/{organization_name}/workspaces?page%5Bsize%5D={PAGE_SIZE}', headers=headers)
+        workspaces = []
+        initial_request_response = requests.get(self.base_url + f'/api/v2/organizations/{organization_name}/workspaces?page%5Bsize%5D={PAGE_SIZE}', headers=self._headers)
         response_json = initial_request_response.json()
 
-        threads = []
         if 'meta' not in response_json:
             total_pages = 1
         else:
@@ -308,12 +267,7 @@ class TerraformCloudClient():
 
         logger.info(f'Fetching {total_pages} pages worth of Workspaces for Organization {organization_name}')
         for page_number in range(1, total_pages + 1):
-            process = threading.Thread(target=self._get_workspaces_page, args=[organization_name, headers, page_number, workspaces])
-            process.start()
-            threads.append(process)
-
-        for process in threads:
-            process.join()
+            self._get_workspaces_page(organization_name, page_number, workspaces)
 
         logger.info(f'Parsed {len(workspaces)} workspaces.')
         return workspaces
@@ -322,22 +276,16 @@ class TerraformCloudClient():
         resources = {
             'resources': {}
         }
-
-        organization = TerraformCloudOrganization.objects.get(
-            name=organization_name)
-        headers = self._build_headers(organization.api_key.value)
-        response = requests.get(self.base_url + f'/api/v2/organizations/{organization_name}/workspaces/{workspace_name}', headers=headers)
+        response = requests.get(self.base_url + f'/api/v2/organizations/{organization_name}/workspaces/{workspace_name}', headers=self._headers)
         workspace_json = response.json()
+        state_lookup_path = workspace_json['data']['relationships']['current-state-version']['links']['related']
 
-        state_lookup_url = self.base_url + \
-            workspace_json['data']['relationships']['current-state-version']['links']['related']
-
-        current_state, state_resources = self._get_current_state_and_resources(state_lookup_url, headers)
+        _, state_resources = self.get_current_state_and_resources(state_lookup_path)
 
         known_data_deps = []   # Store a list of data dependencies as they're seen so that we can check for redundant cross state dependencies.
 
         for resource in state_resources:
-            namespace = _build_namespace(resource)
+            namespace = build_namespace(resource)
             resource_info = {
                 'name': resource['name'],
                 'resource_type': resource['type'],
@@ -371,7 +319,7 @@ class TerraformCloudClient():
             resources['resources'][namespace] = resource_info
         return resources
 
-    def state_revisions(self, workspace_name: str, organization_name: str, current_state_revision_id: str = None, total_local_revs: int = 0):
+    def state_revisions(self, workspace_name: str, organization_name: str, current_state_revision_id: str = None, initial_run=False):
         """For the given workspace_id fetch all state revisions. Will only fetch revisions that aren't already
         known about.
 
@@ -381,7 +329,7 @@ class TerraformCloudClient():
             workspace_name: the name of the Terraform Cloud Workspace to fetch revisions for.
             organizaion_name: the name of the Terraform Cloud Organization to which the Workspace belongs.
             current_state_revision_id: the state Id for the most recent revision. Used to determine if anything needs to be done.
-            total_local_revs: number of local revs, used to help determine if we need to update
+            initial_run: when set to True revisions are all imported, the current revision check is skipped.
         Returns
             A list of parsed state revisions information dicts in order from oldest to most recent.
             For example:
@@ -401,22 +349,26 @@ class TerraformCloudClient():
                 ]
         """
 
-        organization = TerraformCloudOrganization.objects.get(
-            name=organization_name)
-        headers = self._build_headers(organization.api_key.value)
         params = {
             'filter[workspace][name]': workspace_name,
             'filter[organization][name]': organization_name
         }
-        response = requests.get(self.base_url + f'/api/v2/state-versions', headers=headers, params=params)
+
+        response = requests.get(self.base_url + f'/api/v2/state-versions', headers=self._headers, params=params)
         states_versions_response = response.json()
+
         states = []
         total_pages = 1
         state_ids_added = []
         if response.status_code == 200:
-            if (current_state_revision_id == states_versions_response['data'][0]['id']):
-                # Assumes that they are always ordered? TODO : Does this account for weird state manipulations on the remote?
+            if len(states_versions_response['data']) == 0:
+                logger.info(f'No additional state revisions for {workspace_name}. Skipping.')
                 return []
+            
+            if not initial_run:
+                if (current_state_revision_id == states_versions_response['data'][0]['id']):
+                # Assumes that they are always ordered? TODO : Does this account for weird state manipulations on the remote?
+                    return []
 
             logger.debug(f'Fetching revisions for {workspace_name}, as local states are not up to date.')
             if 'meta' in states_versions_response:
@@ -452,7 +404,7 @@ class TerraformCloudClient():
                 'filter[organization][name]': organization_name,
                 'page[number]': page_number
             }
-            response = requests.get(self.base_url + f'/api/v2/state-versions', headers=headers, params=params)
+            response = requests.get(self.base_url + f'/api/v2/state-versions', headers=self._headers, params=params)
             pagination_state_response = response.json()
             if response.status_code == 200:
                 for state_version_info in pagination_state_response['data']:
@@ -481,7 +433,7 @@ class TerraformCloudClient():
         return sorted(states, key=lambda k: k['serial'])
 
 
-def _build_namespace(resource: dict):
+def build_namespace(resource: dict):
     """Given a resource dictionary, returns a full Terraform namespace for the resource.
 
     Args:

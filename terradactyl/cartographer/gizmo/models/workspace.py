@@ -110,6 +110,8 @@ class Workspace(Vertex):
             try:
                 ws = Workspace.vertices.get(
                     name=name, organization=organization)
+                ws.created_at = created_at
+                ws.workspace_id = workspace_id
                 ws.save()
             except VertexDoesNotExistException:
                 ws = Workspace.vertices.create(

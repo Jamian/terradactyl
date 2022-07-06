@@ -1,11 +1,13 @@
+import datetime
 import logging
 
-from celery import shared_task
+from celery import chord, group, shared_task
+from celery.result import AsyncResult
 from django.http import HttpResponse, JsonResponse
 
 from cartographer.gizmo.models import Resource, ResourceInstance, State, Workspace
-from cartographer.models import TerraformCloudAPIKey, TerraformCloudOrganization
-from cartographer.utils.terraform_cloud import TerraformCloudClient, WorkspaceNotFoundException
+from cartographer.models import TerraformCloudOrganization, OrganizationSyncJob
+from cartographer.utils.terraform_cloud import build_namespace, TerraformCloudClient, WorkspaceNotFoundException
 from cartographer.gizmo.models.exceptions import VertexDoesNotExistException
 
 
@@ -13,9 +15,65 @@ BASE_URL = 'https://app.terraform.io'
 
 logger = logging.getLogger(__name__)
 
+@shared_task
+def sync_organization(org_name: str):
+    """For a given organization, fetch all Workspaces and create relevent nodes in the Graph Database. Once
+    all nodes are created ensure that dependency edges are created.
+
+    Args:
+        org_name (str): The name of the Organization to import all Workspaces for.
+    """
+
+    org = TerraformCloudOrganization.objects.get(name=org_name)
+    tfc_client = TerraformCloudClient(api_key=org.api_key.value)
+    org.save()
+
+    # TODO : Check no other sync job in progress. If there is - fail.
+    sync_org_job = OrganizationSyncJob.objects.create(state=OrganizationSyncJob.FETCHING_REMOTE_WORKSPACES, organization=org)
+    sync_org_job.started_at = datetime.datetime.now()
+    sync_org_job.save()
+
+    workspaces = tfc_client.workspaces(org_name)
+
+    sync_org_job.state = OrganizationSyncJob.DRAWING_LOCAL_GRAPH
+    sync_org_job.total_workspaces=len(workspaces)
+    sync_org_job.save()
+    
+    sync_workspace_tasks = group(sync_workspace.s(workspace, sync_org_job.id).set(task_id=f'sync-workspace:' + workspace['name']) for workspace in workspaces)
+    result = sync_workspace_tasks.apply_async()
+
+    while not result.ready():
+        continue
+
+    sync_org_job.state = OrganizationSyncJob.IMPORTING_STATE_HISTORY
+    sync_org_job.save()
+
+
+    sync_revisions_tasks = group(sync_revisions.s(workspace_name=workspace['name'], organization_name=org_name, initial_run=True)
+                                 .set(task_id=f'sync-revisions:' + workspace['name']) for workspace in workspaces)
+
+    result = sync_revisions_tasks.apply_async()
+
+    while not result.ready():
+        continue
+
+    sync_org_job.state = OrganizationSyncJob.IMPORTING_RESOURCES
+    sync_org_job.save()
+
+    sync_resources_tasks = group(sync_resources.s(workspace_name=workspace['name'], organization_name=org_name).set(task_id=f'sync-resources:' + workspace['name']) for workspace in workspaces)
+    result = sync_resources_tasks.apply_async()
+
+    while not result.ready():
+        continue
+
+    sync_org_job.finished_at = datetime.datetime.now()
+    sync_org_job.state = OrganizationSyncJob.COMPLETE
+    sync_org_job.save()
+
+    logger.info('Sync Organization - All Workspace Nodes Created!')   # TODO : Handle Deletion
 
 @shared_task
-def sync_resources(workspace_name):
+def sync_resources(workspace_name, organization_name):
     """Given the Workspace name, fetch all resources for the current revision and create
     a Resource(Vertex) to represent it in the graph database. Each Resourec only stored basic
     metadata like name, resource type. This does not store any other, especially sensitive,
@@ -27,7 +85,8 @@ def sync_resources(workspace_name):
         workspace_name: the name of the Terraform Cloud Workspace to load resources for.
     """
     logger.info(f'Loading resources for workspace: {workspace_name}...')
-    tfc_client = TerraformCloudClient()
+    organization = TerraformCloudOrganization.objects.get(name=organization_name)
+    tfc_client = TerraformCloudClient(api_key=organization.api_key.value)
 
     workspace = Workspace.vertices.get(name=workspace_name)
     current_revision = workspace.get_current_state_revision()
@@ -76,25 +135,30 @@ def sync_resources(workspace_name):
 
 
 @shared_task
-def sync_revisions(workspace_name: str, organization_name: str):
+def sync_revisions(workspace_name, organization_name, initial_run):
     """Async Celery task that calls Terraform Cloud to fetch all State Revisions for a Terraform
     Workspace. For each State version retrieved (an ordered list from oldest to newest) it will
     create a State(Vertex) to represent it and then set then set that it succeeded the State before.
 
     Args
-        workspace_name: the name of the Terraform Workspace to fetch all State revisions for.
-        organization_name: the Terraform Organization name to which the workspace belongs.
+        workspace_name: the name of the Workspace to sync.
+        organization_name: the organization which the workspace belongs to.
+        initial_run: whether the import is the initial import.
     """
+    
+    organization = TerraformCloudOrganization.objects.get(name=organization_name)
+    tfc_client = TerraformCloudClient(api_key=organization.api_key.value)
+
     logger.info(f'Fetching revisions for workspace {workspace_name}...')
-    tfc_client = TerraformCloudClient()
+
     workspace = Workspace.vertices.get(name=workspace_name, organization=organization_name)
+
     try:
         current_local_state_id = workspace.get_current_state_revision().state_id
     except VertexDoesNotExistException:
         current_local_state_id = None
 
-    total_local_revs = workspace.get_total_revision_count()
-    sorted_state_revisions = tfc_client.state_revisions(workspace_name, organization_name, current_local_state_id, total_local_revs)
+    sorted_state_revisions = tfc_client.state_revisions(workspace.name, workspace.organization, current_local_state_id, initial_run)
     previous_state = None
     if len(sorted_state_revisions) > 0:
         for state_info in sorted_state_revisions:
@@ -112,141 +176,94 @@ def sync_revisions(workspace_name: str, organization_name: str):
         total_revisions = len(sorted_state_revisions)
         logger.info(f'Created {total_revisions} revisions for {workspace_name}...')
 
-@shared_task
-def sync_workspace(workspace_name: str, organization_name: str):
-    """Calls Terraform Cloud to synchronise a Workspace.
-    
-    Args
-        workspace: the Workspace object to synchronise with the remote in Terraform Cloud.
+
+@shared_task(bind=True, max_retries=50, default_retry_delay=6)
+def sync_workspace(self, workspace_info, sync_org_job_id):
+    """Fetches the most up to date Workspace from the remote and syncs any state changes or
+    changes to dependencies.
+
+    Args:
+        workspace_info (dict): the dict containing Workspace information.
+        sync_org_job_id (str): the unique id for the sync job.
     """
 
-    logger.info(f'Syncing workspace {workspace_name}')
-    tfc_client = TerraformCloudClient()
-    workspace = Workspace.vertices.get(name=workspace_name, organization=organization_name)
-    try:
-        remote_workspace_chain_data = tfc_client.chain(workspace_name=workspace.name, organization_name=workspace.organization)
-        # First update or create all Vertices in the chain.
-        for workspace_id, workspace_info in remote_workspace_chain_data.items():
-            chain_workspace = Workspace.vertices.update_or_create(
-                name=workspace_info['name'],
-                workspace_id=workspace_id,
-                organization=workspace_info['organization_name'],
-                created_at=workspace_info['created_at']
-            )
+    organization = TerraformCloudOrganization.objects.get(name=workspace_info['organization'])
+    sync_org_job = OrganizationSyncJob.objects.get(id=sync_org_job_id)   # TODO : Handle does not exist
+    tfc_client = TerraformCloudClient(api_key=organization.api_key.value)
 
-            if 'current_state' in workspace_info:
-                cs = State.vertices.update_or_create(
-                    state_id=workspace_info['current_state']['state_id'],
-                    serial=workspace_info['current_state']['serial'],
-                    resource_count=workspace_info['current_state']['resource_count'],
-                    terraform_version=workspace_info['current_state']['terraform_version'],
-                    created_at=workspace_info['current_state']['created_at']
-                )
-                chain_workspace.has_current_state(cs)
+    workspace_name = workspace_info['name']
 
-        # Now that the vertices have been updated, we can add or remove any dependencies.
-        logger.debug('Handling dependencies as we have updated everything...')
-        for workspace_id, workspace_info in remote_workspace_chain_data.items():
-            updated_dependencies = []
-            chain_workspace = Workspace.vertices.get(name=workspace_info['name'], organization=workspace_info['organization_name'])
-            current_dependencies = chain_workspace.get_dependencies(redundant_only=False)
+    workspace_dict = tfc_client.workspace(workspace_name, workspace_info['organization'])
+    # Create the workspace.
+    ws = Workspace.vertices.update_or_create(
+        name=workspace_name,
+        workspace_id=workspace_info['id'],
+        organization=workspace_info['organization'],
+        created_at=workspace_info['created_at']
+    )
 
-            for namespace, dep_info in workspace_info['depends_on'].items():
-                try:
-                    rws = Workspace.vertices.get(name=dep_info['workspace_name'], organization=workspace_info['organization_name'])
-                    chain_workspace.depends_on(rws, dep_info['redundant'])
-                    updated_dependencies.append(rws.name)
-                except Exception as error:
-                    logger.error(f'Error creating dependency for: {workspace_id} - {error}')
+    # Add the current revision, old revisions are fetched later.
+    if 'current_state' in workspace_dict:
+        cs = State.vertices.update_or_create(
+            state_id=workspace_dict['current_state']['state_id'],
+            serial=workspace_dict['current_state']['serial'],
+            resource_count=workspace_dict['current_state']['resource_count'],
+            terraform_version=workspace_dict['current_state']['terraform_version'],
+            created_at=workspace_dict['current_state']['created_at']
+        )
 
-            # Handle any dependencies that have been removed.
-            removed_dependencies = list(set(current_dependencies) - set(updated_dependencies))
-            for dependency in removed_dependencies:
-                ws_to_remove = Workspace.vertices.get(name=dependency)
-                logger.debug(f'Removing dependency... {dependency}')
-                chain_workspace.remove_dependency(ws_to_remove)
-
-            logger.debug('Syncing revisions!!!!!')
-            sync_revisions(workspace_name=workspace_info['name'], organization_name=workspace_info['organization_name'])
-    except WorkspaceNotFoundException:
-        # Workspace didn't exist, probably deleted. Remove from local.
-        workspace.delete()
-
-
-@shared_task
-def load_workspaces(org_names=[], do_sync_revisions=True, do_sync_resources=True):
-    """Calls Terraform Cloud to fetch all Workspaces for the given
-    list of org_names or if none provided, all organizations in the database.
-    Orchestrates a celery chain to ensure all Workspaces are loaded and then dependencies created.
-
-    Args
-        org_names: list of TerraformCloudOrganization names to load. If empty then all workspaces
-                   for all Organizations are loaded.
-        do_sync_revisions: if True then all state revisions are loaded for each Workspace.
-        do_sync_resources: if True then all resources are loaded for each Workspace's current state (not all states).
-    """
-    tfc_client = TerraformCloudClient()
-
-    # TODO : Handle name conflicts across ORGS! Currntly only a single org DB works.
-    org_workspaces = {}
-    if not org_names:
-        org_names = [
-            org.name for org in TerraformCloudOrganization.objects.all()]
-
-    for org_name in org_names:
-        org = TerraformCloudOrganization.objects.get(name=org_name)
-        org.refreshing = True
-        org.save()
-        logger.debug('Fetching workspaces for organization: {org}')
-        workspaces = tfc_client.workspaces(org_name)
-
-        for ws_id, workspace in workspaces.items():
-            # Create the workspace.
-            ws = Workspace.vertices.update_or_create(
-                name=workspace['name'],
-                workspace_id=ws_id,
-                organization=workspace['organization'],
-                created_at=workspace['created_at']
-            )
-            # Add the current revision, old revisions are fetched later.
-            if 'current_state' in workspace:
-                cs = State.vertices.update_or_create(
-                    state_id=workspace['current_state']['state_id'],
-                    serial=workspace['current_state']['serial'],
-                    resource_count=workspace['current_state']['resource_count'],
-                    terraform_version=workspace['current_state']['terraform_version'],
-                    created_at=workspace['current_state']['created_at']
-                )
-
-                ws.has_current_state(cs)
-
-            if do_sync_revisions:
-                sync_revisions.delay(workspace_name=workspace['name'], organization_name=org_name)
-            if do_sync_resources:
-                sync_resources.delay(workspace_name=workspace['name'])
-        org_workspaces = {**org_workspaces, **workspaces}
+        ws.has_current_state(cs)
 
     logger.debug('Fetching workspaces: creating edges...')
-    for ws_id, workspace in org_workspaces.items():
-        # TODO : Multi Org support - this needs to handle org name AND ws name or uniqueness.
-        ws = Workspace.vertices.get(name=workspace['name'])
-        for namespace, workspace_info in workspace['depends_on'].items():
-            required_workspace_name = workspace_info['workspace_name']
-            try:
-                rws = Workspace.vertices.get(name=required_workspace_name, organization=workspace_info['organization'])
-                if required_workspace_name != workspace['name']:
-                    ws.depends_on(rws, workspace_info['redundant'])
-            except Exception as error:
-                logger.error(f'Error creating dependency for: {namespace}')
 
-    logger.debug('Finished refresh updates...')
-    org.refreshing = False
-    org.save()
+    retry=False
 
-    # TODO : Handle any deleted terraform workspaces
-    current_workspaces = Workspace.vertices.filter(organization=org_name)
-    remote_workspaces = org_workspaces.keys()
+    if 'depends_on' in workspace_dict:
+        broken_dependencies = []
 
-    logger.debug('Deleted Workspaces: ', list(set(current_workspaces) - set(remote_workspaces)))
+        for _, dependency_info in workspace_dict['depends_on'].items():
+            required_workspace_name = dependency_info['workspace_name']
+            # Try to fetch the required dependency and if it doesn't exist - make a lightweight version of it.
+            if required_workspace_name != workspace_dict['name']:
+                try:
+                    rws = Workspace.vertices.get(name=required_workspace_name, organization=dependency_info['organization'])
+                    ws.depends_on(rws, dependency_info['redundant'])
+                except VertexDoesNotExistException:
+                    res = AsyncResult(f'sync-workspace:' + required_workspace_name)
+                    if not res.ready():
+                        # This is overkill, will iterate over all dependencies even if only one isn't there.
+                        logger.info(f'Vertex did not exist for dependency {required_workspace_name} in {workspace_name}, sync job status for that workspace is {res.state}.')
+                        broken_dependencies.append({'name': required_workspace_name, 'organization': dependency_info['organization']})
+                        # Set retry to True so we do, but continue to try and make any other dependencies.
+                        retry=True
+                        continue
+                    elif res.state == 'SUCCESS':
+                        # Occasionally this will happen.
+                        try:
+                            # TODO : We need to handle broken dependencies - Workspace depends on a Workspace which no longer exists.
+                            rws = Workspace.vertices.get(name=required_workspace_name, organization=dependency_info['organization'])
+                            ws.depends_on(rws, dependency_info['redundant'])
+                        except VertexDoesNotExistException:
+                            logger.warning(f'Vertex did not exist for dependency {required_workspace_name} in {workspace_name}, despite successful job run.')
+                            broken_dependencies.append({'name': required_workspace_name, 'organization': dependency_info['organization']})
+                    else:
+                        logger.error(f'Could not create dependency {required_workspace_name} for {workspace_name}. Sync job status is {res.state}.')
 
 
+    if self.request.retries == self.max_retries:
+        # We're out of retries, just quickly check if we have any broken dependencies.
+        current_workspaces = Workspace.vertices.count()
+        expected_workspaces = sync_org_job.total_workspaces
+        
+        if current_workspaces == expected_workspaces:
+            # Handle dependencies that did not exist?
+            # Add list to the Vertex some how so we can see it in the GraphDB?
+            for broken_dependency in broken_dependencies:
+                try:
+                    tfc_client.workspace(broken_dependency['name'], broken_dependency['organization'])
+                    logger.error(f'Dependency {broken_dependency["name"]} has not been created locally, but it does exist on the remote.')
+                except WorkspaceNotFoundException:
+                    logger.error(f'Dependency {broken_dependency["name"]} does not exist. Has the Workspace been deleted?')
+    else:
+        if retry:
+            self.retry()

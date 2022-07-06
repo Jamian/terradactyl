@@ -103,15 +103,12 @@ class Resource(Vertex):
         Args:
             target: the Resource object that this Resource depends on.
         """
-        try:
-            Gizmo().g.V(self.v).has('namespace', self.namespace).has('state_id', self.state_id).as_('v') \
-                .V(target.v).has('namespace', target.namespace).has('state_id', target.state_id).as_('t') \
-                .coalesce(
-                __.inE('r_depends_on').where(__.outV().as_('v')),
-                __.addE('r_depends_on').from_('v')
-            ).next()
-        except:
-            print(f'failed to add r_depends_on from {self.namespace} to {target.namespace}')
+        Gizmo().g.V(self.v).has('namespace', self.namespace).has('state_id', self.state_id).as_('v') \
+            .V(target.v).has('namespace', target.namespace).has('state_id', target.state_id).as_('t') \
+            .coalesce(
+            __.inE('r_depends_on').where(__.outV().as_('v')),
+            __.addE('r_depends_on').from_('v')
+        ).next()
         self.save()
 
     def get_dependencies(self):
