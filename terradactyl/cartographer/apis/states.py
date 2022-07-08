@@ -1,6 +1,8 @@
 import datetime
 import math
+from multiprocessing.sharedctypes import Value
 import os
+from venv import create
 import pytz
 import json
 import logging
@@ -183,10 +185,16 @@ def get_state_resources(request, state_name):
 
 
 def humanize_created_at(created_at_raw):
-    if type(created_at_raw) == int:
-        return humanize.naturaldate(datetime.datetime.fromtimestamp(created_at_raw))
+    if type(created_at_raw) == str:
+        try:
+            created_at_raw = float(created_at_raw)
+            humanized = humanize.naturaldate(datetime.datetime.fromtimestamp(created_at_raw))
+        except ValueError:
+            humanized = created_at_raw
     else:
-        return humanize.naturaldate(created_at_raw)
+        humanized = humanize.naturaldate(datetime.datetime.fromtimestamp(created_at_raw))
+
+    return humanized
 
 
 @login_required
@@ -208,12 +216,14 @@ def get_state_run_order(request, state_name):
             if ws_name not in workspaces_data:
                 # If the workspace isn't in the data, add it with a required by: dependency
                 ws_state = Workspace.vertices.get(name=ws_name, organization=path[i+1]['organization'][0]).get_current_state_revision()
-                dep_state = Workspace.vertices.get(name=dep_name, organization=path[i-1]['organization'][0]).get_current_state_revision()
+                dep_ws = Workspace.vertices.get(name=dep_name, organization=path[i-1]['organization'][0])
+                dep_state = dep_ws.get_current_state_revision()
                 workspaces_data[ws_name] = {
                     'required_by': [dep_name],
                     'depends_on': [],
                     'workspace_id': path[i+1]['workspace_id'],
                     'terraform_version': ws_state.terraform_version,
+                    'organization': ws.organization,
                     'serial': ws_state.serial,
                     'created_at': humanize_created_at(path[i-1]['created_at'][0]),
                     'resource_count': ws_state.resource_count
@@ -228,6 +238,7 @@ def get_state_run_order(request, state_name):
                     'depends_on': [ws_name],
                     'workspace_id': path[i-1]['workspace_id'],
                     'terraform_version': dep_state.terraform_version,
+                    'organization': dep_ws.organization,
                     'serial': dep_state.serial,
                     'created_at': humanize_created_at(path[i-1]['created_at'][0]),
                     'resource_count': dep_state.resource_count
@@ -277,6 +288,7 @@ def get_state_run_order(request, state_name):
                 'name': workspace,
                 'depends_on': workspaces_data[workspace]['depends_on'],
                 'terraform_version': workspaces_data[workspace]['terraform_version'],
+                'organization': workspaces_data[workspace]['organization'],
                 'resource_count': workspaces_data[workspace]['resource_count'],
                 'dependency_count': d_count,
                 'serial': workspaces_data[workspace]['serial'],
@@ -304,8 +316,9 @@ def get_state_run_order(request, state_name):
                         'name': cyclic_dep_name,
                         'depends_on': workspaces_data[cyclic_dep_name]['depends_on'],
                         'terraform_version': workspaces_data[cyclic_dep_name]['terraform_version'],
+                        'organization': workspaces_data[cyclic_dep_name]['organization'],
                         'resource_count': workspaces_data[cyclic_dep_name]['resource_count'],
-                        'created_at': workspaces_data[cyclic_dep_name]['created_at'],
+                        'created_at': humanize_created_at(workspaces_data[cyclic_dep_name]['created_at']),
                         'dependency_count': dependency_counts[cyclic_dep_name],
                         'group': 1,
                         'class': 'state'
@@ -345,11 +358,13 @@ def get_state(request, state_name):
                 if part[T.label] == 'depends_on':
                     edge_indices[i] = {'id': part[T.id], 'redundant': part['redundant']}
             for i, edge_info in edge_indices.items():
-                source_state = Workspace.vertices.get(name=path[i-1]['name'][0], organization=path[i-1]['organization'][0]).get_current_state_revision()
+                source_ws = Workspace.vertices.get(name=path[i-1]['name'][0], organization=path[i-1]['organization'][0])
+                source_state = source_ws.get_current_state_revision()
                 source_index = _insert_dict(data['nodes'], {
                     '_id': path[i-1][T.id],
                     'name': path[i-1]['name'][0],
                     'terraform_version': source_state.terraform_version,
+                    'organization': source_ws.organization,
                     'serial': source_state.serial,
                     'dependency_count': Workspace.vertices.get(name=path[i-1]['name'][0]).get_dependency_count(),
                     'resource_count': source_state.resource_count,
@@ -357,12 +372,15 @@ def get_state(request, state_name):
                     'group': 1,
                     'class': 'state'
                 })
-                target_state = Workspace.vertices.get(name=path[i-1]['name'][0], organization=path[i-1]['organization'][0]).get_current_state_revision()
+                
+                taget_ws = Workspace.vertices.get(name=path[i-1]['name'][0], organization=path[i-1]['organization'][0])
+                target_state = taget_ws.get_current_state_revision()
 
                 target_index = _insert_dict(data['nodes'], {
                     '_id': path[i+1][T.id],
                     'name': path[i+1]['name'][0],
                     'terraform_version': target_state.terraform_version,
+                    'organization': taget_ws.organization,
                     'serial': target_state.serial,
                     'dependency_count': Workspace.vertices.get(name=path[i+1]['name'][0]).get_dependency_count(),
                     'resource_count': target_state.resource_count,

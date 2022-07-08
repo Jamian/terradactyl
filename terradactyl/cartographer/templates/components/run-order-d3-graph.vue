@@ -1,6 +1,6 @@
 Vue.component('run-order-graph', {
     template: `<div :style="{ position: 'relative' }">
-    <svg id="run-graph" width="100%" height="300px">
+    <svg id="run-graph" width="100%" height="10rem">
     </svg>
   </div>`,
     props: ['data', 'selectedNode', 'state'],
@@ -10,7 +10,7 @@ Vue.component('run-order-graph', {
             height: 300,
             selections: {},
             simulation: null,
-            pinY: 150,
+            pinY: 100,
             forceProperties: {
                 center: {
                     x: 0.42,

@@ -9,8 +9,12 @@ Vue.component('state-info-panel', {
       <div class="card-body">
           <table class = "table">
             <tr>
-              <th>State Name</th>
+              <th>Workspace Name</th>
               <td>[[ stateName ]]</td>
+            </tr>
+            <tr>
+              <th>Organization</th>
+              <td>[[ organization ]] </td>
             </tr>
             <tr>
               <th>Terraform Version</th>
@@ -51,6 +55,7 @@ Vue.component('state-info-panel', {
         return {
             stateName: 'Click a node to view state info.',
             stateTFVersion: '',
+            organization: '',
             stateDependencies: null,
             viewRunPathBtnDisabled: true,
             stateResourceCount: null,
@@ -61,6 +66,7 @@ Vue.component('state-info-panel', {
     mounted() {
         this.$root.$on('nodeHover', stateData => {
             this.stateName = stateData['name']
+            this.organization = stateData['organization']
             this.stateTFVersion = stateData['terraform_version']
             this.stateDependencies = stateData['dependency_count']
             this.viewRunPathBtnDisabled = false
@@ -70,6 +76,7 @@ Vue.component('state-info-panel', {
         });
         this.$root.$on('nodeClick', stateData => {
             this.stateName = stateData['name']
+            this.organization = stateData['organization']
             this.stateTFVersion = stateData['terraform_version']
             this.stateDependencies = stateData['dependency_count']
             this.viewRunPathBtnDisabled = false

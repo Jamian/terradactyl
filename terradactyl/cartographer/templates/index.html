@@ -86,16 +86,9 @@
                                 aria-labelledby="userDropdown">
                                 <a class="dropdown-item" href="#">
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Profile
+                                    Account
                                 </a>
-                                <a class="dropdown-item" href="#">
-                                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Settings
-                                </a>
-                                <a class="dropdown-item" href="#">
-                                    <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Activity Log
-                                </a>
+
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
@@ -131,7 +124,7 @@
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.state_count }} </div>
                                         </div>
                                         <div class="col-auto">
-                                            <i class="fas fa-circle fa-2x text-gray-300"></i>
+                                            <i class="fas fa-file-code fa-2x text-gray-300"></i>
                                         </div>
                                     </div>
                                 </div>
@@ -183,7 +176,7 @@
                             Your Network currently has <b>{{ stats.dependency_count }}</b> inter-state dependencies, <b>{{ stats.redundant_dependency_count }}</b> of which are redundant. Click below to see about cleaning them up.
                             <br/>
                             <br/>
-                            <button class="btn btn-primary btn-icon-split" data-toggle="modal" data-target="#upstreamsReportModal">
+                            <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#upstreamsReportModal">
                                 <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-list"></i></span>
                                 <span class="text">View Redundant Dependencies</span>
                             </button>
@@ -202,7 +195,7 @@
                             Your Network currently has <b>2</b> cyclic dependencies. If possible, see about removing them.
                             <br/>
                             <br/>
-                            <button class="btn btn-primary btn-icon-split" data-toggle="modal" data-target="#upstreamsReportModal">
+                            <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#upstreamsReportModal">
                                 <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-list"></i></span>
                                 <span class="text">View Cyclic Dependencies</span>
                             </button>

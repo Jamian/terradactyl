@@ -79,15 +79,7 @@
                     aria-labelledby="userDropdown">
                     <a class="dropdown-item" href="#">
                       <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                      Profile
-                    </a>
-                    <a class="dropdown-item" href="#">
-                      <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-                      Settings
-                    </a>
-                    <a class="dropdown-item" href="#">
-                      <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                      Activity Log
+                      Account
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="#" data-toggle="modal"
@@ -185,18 +177,37 @@
                     <div class="card shadow mb-4 border-bottom">
                       <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text">
-                          <i style="padding-top: 0.75rem;" class="fas fa-project-diagram mr-1">
-                          </i> State Network
-                          <div class="d-none d-sm-inline-block form-inline mr-auto float-right" style="width: 30rem;" _lpchecked="1">
+                          {% comment %} <i style="font-size: 2rem; padding-top: 0.7rem;" class="fas fa-project-diagram mr-1">
+                          </i> State Network {% endcomment %}
+                          <div class="d-none d-sm-inline-block form-inline mr-auto float-right" style="width: 100%; height: 3rem;" _lpchecked="1">
                           <div class="input-group">
-                            <input type="text" class="form-control border-0"  placeholder="Search for..." v-model="newNetworkSearchValue" aria-label="Search" aria-describedby="basic-addon2">
+                            <input type="text" class="form-control border-0" style="height: 3rem;" placeholder="Search for..." v-model="newNetworkSearchValue" aria-label="Search" aria-describedby="basic-addon2">
                             <div class="input-group-append">
                                 <div class="btn btn-primary">
-                                    <i class="fas fa-search fa-sm" style="padding-top: 0.4rem;"></i>
+                                    <i class="fas fa-search fa-sm" style="font-size: 1.5rem; padding-top: 1rem;"></i>
                                 </div>
                             </div>
                           </div>
                           </h6>
+                      </div>
+
+                      <div id="graphToggles" class="card-header py-3">
+                        <div class="custom-control custom-switch">
+                          <input @click="$emit('groupByTerraformVersion')" type="checkbox" class="custom-control-input" id="terraformVersionGroupingSwitch">
+                          <label class="custom-control-label" for="terraformVersionGroupingSwitch">Show Terraform Versions</label>
+                        </div>
+                        <div class="custom-control custom-switch">
+                          <input @click="$emit('showUsageHeatMap')" type="checkbox" class="custom-control-input" id="changeHeatMapSwitch">
+                          <label class="custom-control-label" for="changeHeatMapSwitch">Show Heat Map - State Revisions</label>
+                      </div>
+                      <div class="custom-control custom-switch">
+                          <input @click="$emit('showOrganizations')" type="checkbox" class="custom-control-input" id="showOrganizationsSwitch">
+                          <label class="custom-control-label" for="showOrganizationsSwitch">Group Organzations</label>
+                      </div>
+                      <div class="custom-control custom-switch">
+                          <input @click="$emit('showEmptyStates')" type="checkbox" class="custom-control-input" id="showEmptyStatesSwitch">
+                          <label class="custom-control-label" for="showEmptyStatesSwitch">Show Empty States</label>
+                      </div>
                       </div>
                       <div class="card-body">
                         
@@ -206,33 +217,8 @@
                   </div>
                   <!-- Network Graph Info Panel-->
                   <div class="col-lg-3">
-                  <div class="card shadow mb-4 border-bottom">
-                    <div class="card-header py-3">
-                      <h6 class="m-0 font-weight-bold text"><i class="fas fa-sliders-h mr-1"></i>Graph Options</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="custom-control custom-switch">
-                            <input @click="$emit('groupByTerraformVersion')" type="checkbox" class="custom-control-input" id="terraformVersionGroupingSwitch">
-                            <label class="custom-control-label" for="terraformVersionGroupingSwitch">Show Terraform Versions</label>
-                        </div>
-                        </br>
-                        <div class="custom-control custom-switch">
-                            <input @click="$emit('showUsageHeatMap')" type="checkbox" class="custom-control-input" id="usageHeatMapSwitch">
-                            <label class="custom-control-label" for="usageHeatMapSwitch">Usage Heat Map</label>
-                        </div>
-                        </br>
-                        <div class="custom-control custom-switch">
-                            <input @click="$emit('showOrganizations')" type="checkbox" class="custom-control-input" id="showOrganizationsSwitch">
-                            <label class="custom-control-label" for="showOrganizationsSwitch">Group Organzations</label>
-                        </div>
-                        </br>
-                        <div class="custom-control custom-switch">
-                            <input @click="$emit('showEmptyStates')" type="checkbox" class="custom-control-input" id="showEmptyStatesSwitch">
-                            <label class="custom-control-label" for="showEmptyStatesSwitch">Show Empty States</label>
-                        </div>
-                    </div>
-                    </div>
                     <state-info-panel></state-info-panel>
+                 
                     <!-- Network Graph Filter/Options Panel -->
                   </div>
                 </div>
@@ -338,15 +324,18 @@
   Vue.component('dependency-graph', {
     template:
   `<div :style="{ position: 'relative' }">
-    <div v-if="loading" id="depGraphLoadingSpinner" class="spinner-border text" role="status" style="position: absolute; margin-left: 50%; margin-top: 16rem; width: 5rem; height: 5rem;">
+    <div v-if="loading" id="depGraphLoadingSpinner" class="spinner-border text" role="status">
     </div>
+    <div v-if="loading" class="loadingSpinngerLabel">[[ loadingSpinnerText ]]</div>
     <svg id="dep-graph" width="100%" height="700px">
     </svg>
   </div>`,
+    delimiters: ["[[", "]]"],
     props: ['data'],
     data() {
       return {
         selectedNode: false,
+        loadingSpinnerText: "Herding Workspaces...",
         groupByTerraformVersion: false,
         newNetworkSearchValue: '',
         groupByTerraformMajorVersion: false,
@@ -456,6 +445,10 @@
       this.selections.svg = d3.select(this.$el.querySelector("svg"))
       const svg = this.selections.svg
 
+      window.setInterval(()=>{
+        this.changeLoadingText();
+      }, 4000);
+
       // Define the arrow marker
       svg.append("svg:defs").selectAll("marker")
             .data(["end"])     // Different link/path types can be defined here
@@ -531,6 +524,24 @@
       })
     },
     methods: {
+      changeLoadingText() {
+        loadingTextOptions = [
+          "Herding Workspaces...",
+          "Reticulating splines...",
+          "Fetching some crayons...",
+          "Feeding the Gremlins...",
+          "Tokenizing real life...",
+          "We need a new fuse...",
+          "Are we even there yet?",
+          "Polishing connections...",
+          "No flash photography...",
+          "Dividing it by zero...",
+          "Following Cylic deps..."
+        ]
+        random = Math.round(Math.random() *  loadingTextOptions.length - 1);
+        random = random < 0 ? 0 : random;
+        this.loadingSpinnerText = loadingTextOptions[random];
+      },
       pSBC(p,c0,c1,l) {
         // https://stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color-or-rgb-and-blend-colors
         let r,g,b,P,f,t,h,i=parseInt,m=Math.round,a=typeof(c1)=="string";
