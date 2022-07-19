@@ -1,15 +1,14 @@
 import datetime
 import logging
 
-from gremlin_python.process.anonymous_traversal import traversal
-from gremlin_python.process.graph_traversal import __, both, bothE, out, outE, path, otherV
 from gremlin_python.process.traversal import T, Cardinality
+from gremlin_python.process.graph_traversal import __, outE
 
 from cartographer.gizmo import Gizmo
 from cartographer.gizmo.models import Vertex
 from cartographer.gizmo.models.state import State
 from cartographer.gizmo.models.resource import Resource
-from cartographer.gizmo.models.exceptions import VertexDoesNotExistException, MultipleVerticesFoundException
+from cartographer.gizmo.models.exceptions import VertexDoesNotExistException
 
 
 logger = logging.getLogger(__name__)
@@ -138,6 +137,7 @@ class Workspace(Vertex):
                                                                            'organization', 'name').toList()
             else:
                 raise VertexDoesNotExistException
+            # return [v['name'][0] for v in Gizmo().g.V(self.v).outE('depends_on').has('redundant', 'true').inV().valueMap('name')]
 
         @classmethod
         def drop_all(cls):

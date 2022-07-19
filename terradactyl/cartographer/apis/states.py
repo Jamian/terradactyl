@@ -1,23 +1,16 @@
 import datetime
 import math
-from multiprocessing.sharedctypes import Value
-import os
-from venv import create
-import pytz
-import json
 import logging
-import threading
 
 import humanize
 import networkx as nx
 
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
 from django.http import HttpResponse, JsonResponse
 
 
-from gremlin_python.process.traversal import T
+from gremlin_python.process.graph_traversal import __, outE, select, valueMap
+from gremlin_python.process.traversal import gte, T, Order, TextP
 
 from cartographer.gizmo import Gizmo
 from cartographer.gizmo.models import Resource, State, Workspace
@@ -36,7 +29,55 @@ def _index_for_name(ws_list, ws_name):
 
 
 @login_required
-def get_states(request):
+def get_table_states_data(request):
+    """Constructs and returns a set of state objects in a format compatible with
+    data tables. 
+    """
+
+    redundant_deps_str = request.GET.get('redundant-dependencies', '')
+
+    redundant_dependencies = True if redundant_deps_str == 'true' else False
+
+    start = int(request.GET.get('start'))
+    length = int(request.GET.get('length'))
+    end = start + length
+
+    order_column_index = int(request.GET.get('order[0][column]'))
+
+    if redundant_dependencies:
+        order_by = 'count'
+        order_direction = Order.desc if request.GET.get('order[0][dir]') == 'desc' else Order.asc
+
+        if order_column_index == 2: # Handle others?
+            order_by = 'count'
+
+        search_value = request.GET.get('search[value]')
+        if search_value:
+            # TODO : Refactor queries this into Workspace?
+            results = Gizmo().g.V().hasLabel(Workspace.label).has('name', TextP.containing(search_value)).project('workspace', 'count').by(valueMap('name', 'organization')).by(outE('depends_on').has('redundant', 'true').count()).filter(select('count').is_(gte(1))).order().by(order_by, order_direction).range(start, end).toList()
+        else:
+            results = Gizmo().g.V().hasLabel(Workspace.label).project('workspace', 'count').by(valueMap('name', 'organization')).by(outE('depends_on').has('redundant', 'true').count()).filter(select('count').is_(gte(1))).order().by(order_by, order_direction).range(start, end).toList()
+
+    else:
+        # Placeholder for more tables?
+        results = []
+
+    response_data = {
+        'recordsTotal': len(results),
+        'draw': int(request.GET.get('draw')),
+        'data': []
+    }
+
+    for r in results:
+        response_data['data'].append([r['workspace']['name'], r['workspace']['organization'], r['count']])
+
+    return JsonResponse(response_data)
+
+
+@login_required
+def get_graph_states_data(request):
+    """Constructs and returns the dataset required to populate a graph of states.
+    """
     data = {
         'nodes': [],
         'links': []
