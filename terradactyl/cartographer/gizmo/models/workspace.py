@@ -1,8 +1,9 @@
+from cgitb import lookup
 import datetime
 import logging
 
 from gremlin_python.process.traversal import T, Cardinality
-from gremlin_python.process.graph_traversal import __, outE
+from gremlin_python.process.graph_traversal import __, outE, otherV
 
 from cartographer.gizmo import Gizmo
 from cartographer.gizmo.models import Vertex
@@ -12,7 +13,6 @@ from cartographer.gizmo.models.exceptions import VertexDoesNotExistException
 
 
 logger = logging.getLogger(__name__)
-
 
 LABEL = 'workspace'
 
@@ -91,7 +91,12 @@ class Workspace(Vertex):
                 ws = Workspace.vertices.get(
                     name=name, organization=organization)
             except VertexDoesNotExistException:
-                ws = Workspace.vertices.create(**kwargs)
+                ws = Workspace.vertices.create(
+                    workspace_id=workspace_id,
+                    name=name,
+                    organization=organization,
+                    created_at=created_at
+                )
             return ws
 
         @classmethod
@@ -216,21 +221,29 @@ class Workspace(Vertex):
         else:
             return [v['name'][0] for v in Gizmo().g.V(self.v).inE('depends_on').outV().valueMap('name')]
 
-    def get_dependencies(self, redundant_only=False, required_only=False):
+    def get_dependencies(self, lookup_type=None, redundant=None):
         """Fetch a list of all Workspaces that this Workspace has a direct dependency on.
 
         Args
-            redundant_only: if True only return redundant dependencies.
-            required_only: if True only return required dependencies (non redundant).
+            redundant: filters on the Edge redundant property. If not specified all dependencies are returned.
         Returns
             A list of Workspace names for all direct dependencies.
         """
-        if redundant_only:
-            return [v['name'][0] for v in Gizmo().g.V(self.v).outE('depends_on').has('redundant', 'true').inV().valueMap('name')]
-        elif required_only:
-            return [v['name'][0] for v in Gizmo().g.V(self.v).outE('depends_on').has('redundant', 'false').inV().valueMap('name')]
-        else:
-            return [v['name'][0] for v in Gizmo().g.V(self.v).outE('depends_on').inV().valueMap('name')]
+        
+        base_query = Gizmo().g.V(self.v).outE('depends_on')
+        if redundant != None:
+            if type(redundant) != bool:
+                raise TypeError(f'Parameter "redundant" must be a boolean.')
+            redundant_str = str(redundant).lower()
+            base_query = base_query.has('redundant', redundant_str)
+
+        if lookup_type:
+            if lookup_type not in ['terraform_remote_state', 'tfe_outputs']:
+                raise ValueError(f'Invalid lookup type {lookup_type} must be one of ["terraform_remote_state", "tfe_outputs"].')
+            base_query = base_query.has('type', lookup_type)
+
+        base_query = base_query.inV().valueMap('name')
+        return [v['name'][0] for v in base_query]
 
     def remove_dependency(self, target):
         """Remove a depends_on link that exists between this Workspace and the target Workspace.
@@ -262,15 +275,31 @@ class Workspace(Vertex):
         """
         return Gizmo().g.V().has('workspace_id', self.workspace_id).outE('contains').count().next()
 
-    def get_dependency_count(self, redundant=False):
+    def get_dependency_count(self, lookup_type=None, redundant=None):
         """Count the number of Workspace Vertices that this Workspace depends on by counting the depends_on out Edges.
-        
+
+        Args
+            redundant: whether or not to return only redundant dependency counts.
+            lookup_type: the lookup type one of ["terraform_remote_state", "tfe_outputs"].
+
         Returns
             An integer count of the total dependencies.
         """
 
-        redundant_str = str(redundant).lower()
-        return Gizmo().g.V().has('workspace_id', self.workspace_id).outE('depends_on').has('redundant', redundant_str).count().next()
+        base_query = Gizmo().g.V().has('workspace_id', self.workspace_id).outE('depends_on')
+
+        if redundant != None:
+            if type(redundant) != bool:
+                raise TypeError(f'Parameter "redundant" must be a boolean.')
+            redundant_str = str(redundant).lower()
+            base_query = base_query.has('redundant', redundant_str)
+
+        if lookup_type:
+            if lookup_type not in ['terraform_remote_state', 'tfe_outputs']:
+                raise ValueError(f'Invalid lookup type {lookup_type} must be one of ["terraform_remote_state", "tfe_outputs"].')
+            base_query = base_query.has('type', lookup_type)
+
+        return base_query.count().next()
 
     def get_chain(self, vertices_only=False):
         """Fetches the full chain (all nodes connected directly or indirectly) to the current node.
@@ -317,20 +346,26 @@ class Workspace(Vertex):
         self.last_updated = last_updated
         self.created_at = created_at
 
-    def depends_on(self, target, redundant=False):
+    def depends_on(self, target, lookup_type, redundant=False):
         """Creates an edge from the current workspace to the target one.
 
         Args
             target: the target Workspace to set as the edge target node.
             redundant: the redundant property on the edge is set to this value (in lowercase form as a string).
+            lookup_type: the lookup type one of ["terraform_remote_state", "tfe_outputs"].
         """
         redundant_str = str(redundant).lower()
+        
+        if lookup_type not in ['terraform_remote_state', 'tfe_outputs']:
+            raise ValueError(f'Invalid lookup type {lookup_type} must be one of ["terraform_remote_state", "tfe_outputs"].')
+
         Gizmo().g.V(self.v).has('name', self.name).has('organization', self.organization).as_('v') \
             .V(target.v).has('name', target.name).has('organization', target.organization).as_('t') \
             .coalesce(
             __.inE('depends_on').where(__.outV().as_('v')),
-            __.addE('depends_on').property('redundant', redundant_str).from_('v')
+            __.addE('depends_on').property('redundant', redundant_str).property('type', lookup_type).from_('v')
         ).next()
+
         self.save()
 
     def has_current_state(self, target):

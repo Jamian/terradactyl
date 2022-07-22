@@ -178,17 +178,24 @@ def sync_revisions(workspace_name, organization_name, initial_run):
 
 
 @shared_task(bind=True, max_retries=50, default_retry_delay=6)
-def sync_workspace(self, workspace_info, sync_org_job_id):
+def sync_workspace(self, workspace_info, sync_org_job_id=None):
     """Fetches the most up to date Workspace from the remote and syncs any state changes or
     changes to dependencies.
 
     Args:
         workspace_info (dict): the dict containing Workspace information.
+            {
+                'name': 'foo',
+                'organization': 'bar',
+                'created_at': 123456,
+                'id': 'workspaceid'
+            }
         sync_org_job_id (str): the unique id for the sync job.
     """
 
     organization = TerraformCloudOrganization.objects.get(name=workspace_info['organization'])
-    sync_org_job = OrganizationSyncJob.objects.get(id=sync_org_job_id)   # TODO : Handle does not exist
+    if sync_org_job_id:
+        sync_org_job = OrganizationSyncJob.objects.get(id=sync_org_job_id)   # TODO : Handle does not exist
     tfc_client = TerraformCloudClient(api_key=organization.api_key.value)
 
     workspace_name = workspace_info['name']
@@ -250,20 +257,22 @@ def sync_workspace(self, workspace_info, sync_org_job_id):
                         logger.error(f'Could not create dependency {required_workspace_name} for {workspace_name}. Sync job status is {res.state}.')
 
 
-    if self.request.retries == self.max_retries:
-        # We're out of retries, just quickly check if we have any broken dependencies.
-        current_workspaces = Workspace.vertices.count()
-        expected_workspaces = sync_org_job.total_workspaces
-        
-        if current_workspaces == expected_workspaces:
-            # Handle dependencies that did not exist?
-            # Add list to the Vertex some how so we can see it in the GraphDB?
-            for broken_dependency in broken_dependencies:
-                try:
-                    tfc_client.workspace(broken_dependency['name'], broken_dependency['organization'])
-                    logger.error(f'Dependency {broken_dependency["name"]} has not been created locally, but it does exist on the remote.')
-                except WorkspaceNotFoundException:
-                    logger.error(f'Dependency {broken_dependency["name"]} does not exist. Has the Workspace been deleted?')
+    if sync_org_job_id:
+        # When a full organisation sync we can get broken Workspaces with bad dep links.
+        if self.request.retries == self.max_retries:
+            # We're out of retries, just quickly check if we have any broken dependencies.
+            current_workspaces = Workspace.vertices.count()
+            expected_workspaces = sync_org_job.total_workspaces
+            
+            if current_workspaces == expected_workspaces:
+                # Handle dependencies that did not exist?
+                # Add list to the Vertex some how so we can see it in the GraphDB?
+                for broken_dependency in broken_dependencies:
+                    try:
+                        tfc_client.workspace(broken_dependency['name'], broken_dependency['organization'])
+                        logger.error(f'Dependency {broken_dependency["name"]} has not been created locally, but it does exist on the remote.')
+                    except WorkspaceNotFoundException:
+                        logger.error(f'Dependency {broken_dependency["name"]} does not exist. Has the Workspace been deleted?')
     else:
         if retry:
             self.retry()

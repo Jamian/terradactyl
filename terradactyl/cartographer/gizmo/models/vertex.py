@@ -1,5 +1,3 @@
-import datetime
-
 from gremlin_python.process.anonymous_traversal import traversal
 from gremlin_python.process.graph_traversal import __, both, bothE, out, outE, path
 from gremlin_python.process.traversal import T

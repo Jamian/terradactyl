@@ -388,7 +388,12 @@ def get_state(request, state_name):
     ws = Workspace.vertices.get(name=state_name)
     # TODO : This url should be {org}/{workspace}
     if is_sync:
-        sync_workspace.delay(ws.name, ws.organization)
+        sync_workspace.delay({
+            'name': ws.name,
+            'organization': ws.organization,
+            'id': ws.workspace_id,
+            'created_at': ws.created_at
+        })
         response = HttpResponse()
     else:
         chain = ws.get_chain()

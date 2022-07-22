@@ -205,7 +205,7 @@ class TerraformCloudClient():
             workspace_dict['current_state'] = current_state
 
             # TODO : Refactor this into a function as well
-            data_resources = [r for r in state_resources if (r['mode'] == 'data' and r['type'] == 'terraform_remote_state')]
+            data_resources = [r for r in state_resources if (r['mode'] == 'data' and (r['type'] in ['terraform_remote_state', 'tfe_outputs']))]
             for dr in [dr for dr in data_resources if len(dr['instances']) > 0]:
                 # TODO : Is the hard coded 0 good enough? Not sure of multiple instances use cases.
                 namespace = build_namespace(dr)
@@ -223,7 +223,7 @@ class TerraformCloudClient():
             for r in [r for r in managed_resources if len(r['instances']) > 0]:
                 instance = r['instances'][0]   # TODO : Is this sufficient, do all instances all share the same dependencies?
                 if 'dependencies' in instance:
-                    for dependency in [d for d in instance['dependencies'] if 'terraform_remote_state' in d]:
+                    for dependency in [d for d in instance['dependencies'] if ('terraform_remote_state' in d or 'tfe_outputs' in d)]:
                         if dependency not in workspace_dict['depends_on']:
                             # raise Exception(f'Error parsing dependencies... missing terraform_remote_state referenced. Dependency: {dependency}. Workspace: {workspace_dict["name"]}')
                             # Seems like an optional data in a module is classed as a dep, even though it is not used... so just log info this for now?
@@ -294,7 +294,7 @@ class TerraformCloudClient():
                 'instances': [],
                 'depends_on': []
             }
-            for instance in [ i for i in resource['instances'] if (resource['mode'] != 'data' and resource['type'] != 'terraform_remote_state')]:
+            for instance in [ i for i in resource['instances'] if (resource['mode'] != 'data' and (resource['type'] not in ('terraform_remote_state', 'tfe_outputs')))]:
                 if 'index_key' not in instance:
                     # If a resource doesn't have instances (is singular anyway) then there is no key.
                     # To make our life easier we'll just default these to _default.
