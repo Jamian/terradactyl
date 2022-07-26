@@ -17,7 +17,7 @@ class LoginView(View):
             auth_login(request, user)
             return redirect('index')
 
-def LogoutView(View):
+class LogoutView(View):
     def get(self, request):
         auth_logout(request)
         return redirect('login')
