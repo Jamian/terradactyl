@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Tests
 
 on: push
 
@@ -12,6 +12,8 @@ jobs:
     services:
       tinkerpop-gremlin:
         image: tinkerpop/gremlin-server:3.4.10
+        ports:
+          - 8182:8182
 
     steps:
       - uses: actions/checkout@v3
