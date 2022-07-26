@@ -1,4 +1,5 @@
 {% load static %}
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -39,7 +40,7 @@
 
                         <!-- Sidebar Toggle (Topbar) -->
                         <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
-                            <i class="fa fa-bars"></i>
+                            <i class="fa fa-bars" aria-hidden="true"></i>
                         </button>
 
                         <!-- Topbar Navbar -->
@@ -48,7 +49,7 @@
                             <!-- Nav Item - Search Dropdown (Visible Only XS) -->
                             <li class="nav-item dropdown no-arrow d-sm-none">
                                 <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fas fa-search fa-fw"></i>
+                                    <i class="fas fa-search fa-fw" aria-hidden="true"></i>
                                 </a>
                                 <!-- Dropdown - Messages -->
                                 <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in" aria-labelledby="searchDropdown">
@@ -57,7 +58,7 @@
                                             <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2">
                                             <div class="input-group-append">
                                                 <button class="btn btn-primary" type="button">
-                                                    <i class="fas fa-search fa-sm"></i>
+                                                    <i class="fas fa-search fa-sm" aria-hidden="true"></i>
                                                 </button>
                                             </div>
                                         </div>
@@ -75,14 +76,14 @@
                                 <!-- Dropdown - User Information -->
                                 <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
                                     <a class="dropdown-item" href="#">
-                                        <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile
+                                        <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400" aria-hidden="true"></i> Profile
                                     </a>
                                     <a class="dropdown-item" href="#">
-                                        <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i> Settings
+                                        <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400" aria-hidden="true"></i> Settings
                                     </a>
                                     <div class="dropdown-divider"></div>
                                     <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
-                                        <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
+                                        <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400" aria-hidden="true"></i> Logout
                                     </a>
                                 </div>
                             </li>
@@ -111,7 +112,7 @@
                                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.workspaces_count }} </div>
                                             </div>
                                             <div class="col-auto">
-                                                <i class="fa-brands fa-hashnode fa-2x text-gray-300"></i>
+                                                <i class="fa-brands fa-hashnode fa-2x text-gray-300" aria-hidden="true"></i>
                                             </div>
                                         </div>
                                     </div>
@@ -146,7 +147,7 @@
 
         <!-- Scroll to Top Button-->
         <a class="scroll-to-top rounded" href="#page-top">
-            <i class="fas fa-angle-up"></i>
+            <i class="fas fa-angle-up" aria-hidden="true"></i>
         </a>
         <!-- Logout Modal-->
         <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">

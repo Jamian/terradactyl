@@ -1,5 +1,6 @@
 {% load static %}
 {% load humanize %}
+<!DOCTYPE html>
 <html lang="en">
 
   <head>
@@ -47,7 +48,7 @@
               <!-- Sidebar Toggle (Topbar) -->
               <button id="sidebarToggleTop" class="btn btn-link d-md-none
                 rounded-circle mr-3">
-                <i class="fa fa-bars"></i>
+                <i class="fa fa-bars" aria-hidden="true"></i>
               </button>
 
               <!-- Topbar Navbar -->
@@ -60,7 +61,7 @@
                     role="button"
                     data-toggle="dropdown" aria-haspopup="true"
                     aria-expanded="false">
-                    <i class="fas fa-search fa-fw"></i>
+                    <i class="fas fa-search fa-fw" aria-hidden="true"></i>
                   </a>
                   <!-- Dropdown - Messages -->
                   <div class="dropdown-menu dropdown-menu-right p-3 shadow
@@ -74,7 +75,7 @@
                           aria-describedby="basic-addon2">
                         <div class="input-group-append">
                           <button class="btn btn-primary" type="button">
-                            <i class="fas fa-search fa-sm"></i>
+                            <i class="fas fa-search fa-sm" aria-hidden="true"></i>
                           </button>
                         </div>
                       </div>
@@ -98,18 +99,18 @@
                     animated--grow-in"
                     aria-labelledby="userDropdown">
                     <a class="dropdown-item" href="#">
-                      <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                      <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400" aria-hidden="true"></i>
                       Account
                     </a>
                     <a class="dropdown-item" href="#">
-                      <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                      <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400" aria-hidden="true"></i>
                       Settings
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="#" data-toggle="modal"
                       data-target="#logoutModal">
                       <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2
-                        text-gray-400"></i>
+                        text-gray-400" aria-hidden="true"></i>
                       Logout
                     </a>
                   </div>
@@ -142,7 +143,7 @@
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.created_at }} </div>
                                 </div>
                                 <div class="col-auto">
-                                    <i class="fas fa-baby fa-2x text-gray-300"></i>
+                                    <i class="fas fa-baby fa-2x text-gray-300" aria-hidden="true"></i>
                                 </div>
                             </div>
                         </div>
@@ -158,7 +159,7 @@
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.latest_apply }} </div>
                                 </div>
                                 <div class="col-auto">
-                                    <i class="fas fa-play fa-2x text-gray-300"></i>
+                                    <i class="fas fa-play fa-2x text-gray-300" aria-hidden="true"></i>
                                 </div>
                             </div>
                         </div>
@@ -174,7 +175,7 @@
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.revision_count }} </div>
                                 </div>
                                 <div class="col-auto">
-                                    <i class="fas fa-history fa-2x text-gray-300"></i>
+                                    <i class="fas fa-history fa-2x text-gray-300" aria-hidden="true"></i>
                                 </div>
                             </div>
                         </div>
@@ -190,7 +191,7 @@
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.resource_count }} </div>
                                 </div>
                                 <div class="col-auto">
-                                    <i class="fas fa-box fa-2x text-gray-300"></i>
+                                    <i class="fas fa-box fa-2x text-gray-300" aria-hidden="true"></i>
                                 </div>
                             </div>
                         </div>
@@ -206,7 +207,7 @@
                                     <div v-model="infoLastSynced" class="h5 mb-0 font-weight-bold text-gray-800">[[ infoLastSynced ]]</div>
                                 </div>
                                 <div class="col-auto">
-                                    <i class="fas fa-clock fa-2x text-gray-300"></i>
+                                    <i class="fas fa-clock fa-2x text-gray-300" aria-hidden="true"></i>
                                 </div>
                             </div>
                         </div>
@@ -233,7 +234,7 @@
                     <div class="card shadow mb-4 border-bottom">
                       <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-info">
-                          <i class="fas fa-play mr-1"></i>
+                          <i class="fas fa-play mr-1" aria-hidden="true"></i>
                           Apply Order</h6>
                       </div>
                       <div class="card-body">
@@ -248,7 +249,7 @@
                   <div class="card shadow mb">
                     <div class="card-header py-3">
                       <h6 class="m-0 font-weight-bold text-info">
-                        <i class="fas fa-project-diagram mr-1"></i>
+                        <i class="fas fa-project-diagram mr-1" aria-hidden="true"></i>
                         State Network</h6>
                     </div>
                     <div class="card-body">
@@ -261,20 +262,20 @@
                   <!-- Network Graph Info Panel-->
                     <div class="card shadow mb-4 border-bottom">
                       <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text"><i class="fas fa-sliders-h mr-1"></i>Control Panel</h6>
+                        <h6 class="m-0 font-weight-bold text"><i class="fas fa-sliders-h mr-1" aria-hidden="true"></i>Control Panel</h6>
                       </div>
                       <div class="card-body">
                             <button @click="syncState" class="btn btn-primary btn-icon-split" style="margin-bottom: .4rem;">
-                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-sync-alt"></i></span>
+                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-sync-alt" aria-hidden="true"></i></span>
                                 <span class="text">Synchronize State</span>
                             </button>
                             </br>
                             <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#downstreamsReportModal">
-                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-file-alt"></i></span>
+                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-file-alt" aria-hidden="true"></i></span>
                                 <span class="text">Downstreams Report</span>
                             </button>
                             <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#upstreamsReportModal">
-                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-file-alt"></i></span>
+                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-file-alt" aria-hidden="true"></i></span>
                                 <span class="text">Upstreams Report</span>
                             </button>
                       </div>
@@ -413,7 +414,7 @@
 
       <!-- Scroll to Top Button-->
       <a class="scroll-to-top rounded" href="#page-top">
-        <i class="fas fa-angle-up"></i>
+        <i class="fas fa-angle-up" aria-hidden="true"></i>
       </a>
 
     <!-- Logout -->
