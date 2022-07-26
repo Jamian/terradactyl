@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.urls import path
 
 from .views import auth, remotes, states as states_view, reports as reports_view
@@ -22,8 +23,8 @@ urlpatterns = [
     path('api/v1/g/states/<state_name>', states_api.get_state, name='get-state'),
     path('api/v1/g/states/<state_name>/resources', states_api.get_state_resources, name='get-state-resources'),
     path('api/v1/g/states/<state_name>/run-order', states_api.get_state_run_order, name='get-state-run-order'),
-    path('api/v1/terraform-cloud/api-keys', terraform_cloud.terraform_cloud_api_keys, name='terraform-cloud-api-keys'),
-    path('api/v1/terraform-cloud/organizations', terraform_cloud.terraform_cloud_organizations, name='terraform-cloud-organizations'),
+    path('api/v1/terraform-cloud/api-keys', login_required(terraform_cloud.TerraformCloudAPIKeys.as_view()), name='terraform-cloud-api-keys'),
+    path('api/v1/terraform-cloud/organizations', login_required(terraform_cloud.TerraformCloudOrganizations.as_view()), name='terraform-cloud-organizations'),
 
     path('api/v1/insights/daily-change', insights_api.daily_change, name='insights'),
 ]
