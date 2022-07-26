@@ -1,6 +1,7 @@
 import json
 import logging
 
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 
@@ -37,6 +38,7 @@ def _create_terraform_cloud_api_key(request):
     return HttpResponse(status=201)
 
 
+@login_required
 @require_http_methods(['GET', 'PUT'])
 def terraform_cloud_api_keys(request):
     """Wrapper function for handling Terraform Cloud API Key requests.
@@ -75,6 +77,7 @@ def _put_terraform_cloud_organization(request):
     return HttpResponse(status=201)
 
 
+@login_required
 @require_http_methods(['GET', 'PUT'])
 def terraform_cloud_organizations(request):
     """Wrapper function for handling Terraform Cloud Organisation requests.
