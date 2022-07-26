@@ -42,7 +42,7 @@
 
                     <!-- Sidebar Toggle (Topbar) -->
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
-                        <i class="fa fa-bars" aria-hidden="true" ></i>
+                        <i class="fa fa-bars" aria-hidden="true"></i>
                     </button>
 
                     <!-- Topbar Navbar -->
@@ -51,7 +51,7 @@
                         <li class="nav-item dropdown no-arrow d-sm-none">
                             <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-search fa-fw" aria-hidden="true" ></i>
+                                <i class="fas fa-search fa-fw" aria-hidden="true"></i>
                             </a>
                             <!-- Dropdown - Messages -->
                             <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
@@ -63,7 +63,7 @@
                                             aria-describedby="basic-addon2">
                                         <div class="input-group-append">
                                             <button class="btn btn" type="button">
-                                                <i class="fas fa-search fa-sm"></i>
+                                                <i class="fas fa-search fa-sm" aria-hidden="true"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -171,7 +171,7 @@
                           </div>
                           <!-- Card Body -->
                           <div class="card-body">
-                            Your Network currently has <b>{{ stats.dependency_count }}</b> inter-state dependencies, <b>{{ stats.redundant_dependency_count }}</b> of which are redundant. Click below to see about cleaning them up.
+                            Your Network currently has <strong>{{ stats.dependency_count }}</strong> inter-state dependencies, <strong>{{ stats.redundant_dependency_count }}</strong> of which are redundant. Click below to see about cleaning them up.
                             <br/>
                             <br/>
                             <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#upstreamsReportModal">
@@ -190,7 +190,7 @@
                           </div>
                           <!-- Card Body -->
                           <div class="card-body">
-                            Your Network currently has <b>2</b> cyclic dependencies. If possible, see about removing them.
+                            Your Network currently has <strong>2</strong> cyclic dependencies. If possible, see about removing them.
                             <br/>
                             <br/>
                             <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#upstreamsReportModal">
