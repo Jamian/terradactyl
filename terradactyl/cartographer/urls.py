@@ -8,8 +8,8 @@ from .apis import terraform_cloud, states as states_api, insights as insights_ap
 urlpatterns = [
     # Views
     path('', states_view.index, name='index'),
-    path('login', auth.login, name='login'),
-    path('logout', auth.logout, name='logout'),
+    path('login', auth.LoginView.as_view(), name='login'),
+    path('logout', auth.LogoutView.as_view(), name='logout'),
     path('states', states_view.states, name='states'),
     path('states/<state_name>', states_view.state, name='states'),
     path('organizations', remotes.organizations, name='organizations'),
