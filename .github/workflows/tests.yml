@@ -29,7 +29,7 @@ jobs:
       - name: Run Tests
         run: |
           cd terradactyl/
-          coverage run ./manage.py test
+          TERRADACTYL_ENCRYPTED_CHAR_FIELD_SALT=BAR TERRADACTYL_ENCRYPTED_CHAR_FIELD_KEY=FOO coverage run ./manage.py test
           coverage xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
