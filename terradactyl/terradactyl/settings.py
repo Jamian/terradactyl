@@ -15,15 +15,9 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('TERRADACTYL_DJANGO_DEBUG', False)
 
 ALLOWED_HOSTS = []
 
@@ -136,8 +130,8 @@ LOGGING = {
 }
 
 # Encrypted Char Field Settings
-ENCRYPTED_CHAR_FIELD_KEY  = 'uSK)3JVdW3U/jpBpYKE7TUg3w&PhE3IZ(bq1R@Nx9Dot27-vhG/b9w9FZafki+x6l'
-ENCRYPTED_CHAR_FIELD_SALT = '2fe6e161e00c40e213ab9746c1b20e97'
+ENCRYPTED_CHAR_FIELD_KEY  = os.environ['TERRADACTYL_ENCRYPTED_CHAR_FIELD_KEY']
+ENCRYPTED_CHAR_FIELD_SALT = os.environ['TERRADACTYL_ENCRYPTED_CHAR_FIELD_SALT']
 
 LOGIN_URL = '/login'
 
