@@ -6,6 +6,7 @@ import humanize
 import networkx as nx
 
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse, JsonResponse
 
 
@@ -29,6 +30,7 @@ def _index_for_name(ws_list, ws_name):
 
 
 @login_required
+@require_http_methods(['GET'])
 def get_table_states_data(request):
     """Constructs and returns a set of state objects in a format compatible with
     data tables. 
@@ -75,6 +77,7 @@ def get_table_states_data(request):
 
 
 @login_required
+@require_http_methods(['GET'])
 def get_graph_states_data(request):
     """Constructs and returns the dataset required to populate a graph of states.
     """
@@ -143,6 +146,7 @@ def get_graph_states_data(request):
 
 
 @login_required
+@require_http_methods(['GET'])
 def get_state_resources(request, state_name):
     is_refresh_str = request.GET.get('refresh')
     is_refresh = True if is_refresh_str == 'true' else False
@@ -154,7 +158,7 @@ def get_state_resources(request, state_name):
         tfc_client = TerraformCloudClient()
 
         workspace = Workspace.vertices.get(name=state_name)
-        resources = tfc_client.resources(workspace.organization, state_name)
+        resources = tfc_client.resources(workspace.organization, workspace.name)
 
         # First pass, create resources.
         for r_namespace, resource in resources.items():
@@ -239,6 +243,7 @@ def humanize_created_at(created_at_raw):
 
 
 @login_required
+@require_http_methods(['GET'])
 def get_state_run_order(request, state_name):
     data = {'nodes': [], 'links': []}
     ws = Workspace.vertices.get(name=state_name)
@@ -379,6 +384,7 @@ def get_state_run_order(request, state_name):
 
 
 @login_required
+@require_http_methods(['GET'])
 def get_state(request, state_name):
     data = {'nodes': [], 'links': []}
 
