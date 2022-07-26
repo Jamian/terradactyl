@@ -1,13 +1,10 @@
-import os
-import json
-import threading
-
-from django.conf import settings
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+
 from django.shortcuts import redirect, render
-from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_http_methods
 
 
+@require_http_methods(['GET', 'POST'])
 def login(request):
     """View for login.
     """
@@ -24,6 +21,7 @@ def login(request):
         return render(request, 'login.html', {})
 
 
+@require_http_methods(['GET'])
 def logout(request):
     """View for logout
     """
