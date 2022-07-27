@@ -31,7 +31,6 @@ jobs:
           cd terradactyl/
           TERRADACTYL_ENCRYPTED_CHAR_FIELD_SALT=BAR TERRADACTYL_ENCRYPTED_CHAR_FIELD_KEY=FOO coverage run ./manage.py test
           coverage xml
-          mv coverage.xml ../coverage.xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
@@ -41,5 +40,6 @@ jobs:
           args: >
             -Dsonar.organization=jamian
             -Dsonar.projectKey=Jamian_terradactyl
+            -Dsonar.sources=terradactyl/
             -Dsonar.python.coverage.reportPaths=coverage.xml
             -Dsonar.test.exclusions=terradactyl/cartographer/tests/**
