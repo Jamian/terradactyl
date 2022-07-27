@@ -3,7 +3,7 @@
 <br/>
 <br/>
 
-![bandit](https://github.com/jamian/terradactyl/actions/workflows/bandit.yml/badge.svg) [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=Jamian_terradactyl&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=Jamian_terradactyl) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Jamian_terradactyl&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Jamian_terradactyl)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=Jamian_terradactyl&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=Jamian_terradactyl) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Jamian_terradactyl&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Jamian_terradactyl)
 
 <h1>Terradactyl</h1>
 
