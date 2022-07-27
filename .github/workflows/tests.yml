@@ -41,3 +41,4 @@ jobs:
             -Dsonar.organization=jamian
             -Dsonar.projectKey=Jamian_terradactyl
             -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.test.exclusions=terradactyl/cartographer/tests/**
