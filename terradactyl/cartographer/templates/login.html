@@ -1,4 +1,5 @@
 {% load static %}
+<!DOCTYPE html>
 <html lang="en">
 <head>
 
@@ -35,7 +36,7 @@
                         <div class="card-body p-0">
                             <div class="row">
                                 <div class="col-lg-6 d-none d-lg-block bg-login-image" style="height: 600px">
-                                <img src="{% static 'img/terradactyl-logo.svg' %}" style="width: 50%; height: auto; margin: 14.5rem 0 0 7.5rem"></img>
+                                <img src="{% static 'img/terradactyl-logo.svg' %}" style="width: 50%; height: auto; margin: 14.5rem 0 0 7.5rem" alt="Terradactyl-Logo"></img>
                                 </div>
                                 <div class="col-lg-6">
                                     <div class="p-5">
@@ -84,7 +85,7 @@
 </body>
 </html>
 
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js" integrity="sha384-t1tHLsbM7bYMJCXlhr0//00jSs7ZhsAhxgm191xFsyzvieTMCbUWKMhFg9I6ci8q" crossorigin="anonymous"></script>
 <script>
     new Vue({
         el: "#app",

@@ -1,8 +1,5 @@
 import datetime
-import os
-import pytz
 import json
-import threading
 
 from collections import OrderedDict
 
@@ -11,9 +8,7 @@ import humanize
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
-from django.http import JsonResponse
-
-from gremlin_python.process.traversal import T
+from django.views.decorators.http import require_http_methods
 
 from cartographer.gizmo import Gizmo
 from cartographer.gizmo.models import Resource, ResourceInstance, Workspace
@@ -21,6 +16,7 @@ from cartographer.gizmo.models.exceptions import VertexDoesNotExistException
 
 
 @login_required
+@require_http_methods(['GET'])
 def index(request):
     """Main entrypoint post login into the system.
     """
@@ -39,6 +35,7 @@ def index(request):
 
 
 @login_required
+@require_http_methods(['GET'])
 def state(request, state_name):
     """View for showing information about an individual State. Shows basic statistics
     liek resource counts, age etc. APIs are called post load to fetch the network
@@ -89,6 +86,7 @@ def state(request, state_name):
 
 
 @login_required
+@require_http_methods(['GET'])
 def states(request):
     """View for the main network page that visualizes and allows users to explore their whole State network.
     APIs are called post load for fetching the actual network. Initial load does populate the

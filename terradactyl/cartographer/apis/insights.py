@@ -2,29 +2,21 @@ import datetime
 import logging
 
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
-from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
 
 
 from gremlin_python.process.traversal import T
 
-from cartographer.gizmo import Gizmo
-from cartographer.gizmo.models import Resource, State, Workspace
-from cartographer.utils.terraform_cloud import TerraformCloudClient
+from cartographer.gizmo.models import Workspace
 from cartographer.gizmo.models.exceptions import VertexDoesNotExistException
-from cartographer.tasks.terraform_cloud import sync_workspace
 
 
 logger = logging.getLogger(__name__)
 
 
-def _index_for_name(ws_list, ws_name):
-    for pos, ws in enumerate(ws_list):
-        if ws['name'] == ws_name:
-            return pos
-
-
 @login_required
+@require_http_methods(['GET'])
 def daily_change(request):
     data = {
         'daily_change': {},

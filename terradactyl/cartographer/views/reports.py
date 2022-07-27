@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from django.views.decorators.http import require_http_methods
 
 from cartographer.gizmo import Gizmo
 from cartographer.gizmo.models import Workspace
@@ -7,6 +8,7 @@ from cartographer.gizmo.models.exceptions import VertexDoesNotExistException
 
 
 @login_required
+@require_http_methods(['GET'])
 def terraform_versions(request):
     """
     """
@@ -31,7 +33,9 @@ def terraform_versions(request):
     }
     return render(request, 'terraform-versions.html', context)
 
+
 @login_required
+@require_http_methods(['GET'])
 def redundant_dependencies(request):
     ""
     ""

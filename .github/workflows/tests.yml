@@ -1,0 +1,84 @@
+name: Tests
+
+on: push
+
+jobs:
+  bandit-checks:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['pypy-3.8']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: 'x64'
+
+      - name: Create Env
+        run: pip install virtualenv && virtualenv venv
+
+      - name: Activate Env
+        run: . venv/bin/activate & echo $(python --version)
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt --upgrade pip
+      
+      - name: Install Bandit
+        run: pip install bandit
+  
+      - name: Run Bandit
+        run: bandit -r terradactyl/ -f html -o bandit-report.html
+
+      - name: Upload Results
+        if: ${{ success() || failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: bandit-report
+          path: bandit-report.html
+
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+
+    services:
+      tinkerpop-gremlin:
+        image: tinkerpop/gremlin-server:3.4.10
+        ports:
+          - 8182:8182
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install coverage
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Run Tests
+        run: |
+          cd terradactyl/
+          TERRADACTYL_ENCRYPTED_CHAR_FIELD_SALT=BAR TERRADACTYL_ENCRYPTED_CHAR_FIELD_KEY=FOO coverage run ./manage.py test
+          coverage xml
+      - name: Refactor Code Coverage Paths
+        run: |
+          sed -i 's/\/home\/runner\/work\/terradactyl\/terradactyl\//\/github\/workspace\//g' terradactyl/coverage.xml
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=jamian
+            -Dsonar.projectKey=Jamian_terradactyl
+            -Dsonar.sources=terradactyl/
+            -Dsonar.python.coverage.reportPaths=terradactyl/coverage.xml
+            -Dsonar.python.version=3.8,3.9
+            -Dsonar.test.exclusions=terradactyl/cartographer/tests/**

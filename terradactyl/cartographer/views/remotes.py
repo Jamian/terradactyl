@@ -3,15 +3,15 @@ import humanize
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.db.models import Q
-import networkx as nx
+from django.views.decorators.http import require_http_methods
 
-from gremlin_python.process.traversal import T
 
 from cartographer.gizmo.models import Workspace
 from cartographer.models import OrganizationSyncJob, TerraformCloudOrganization
 
 
 @login_required
+@require_http_methods(['GET'])
 def organizations(request):
     """View for managing Terraform Cloud data like Organizations and the API Keys
     that are required to interact with them.
@@ -49,6 +49,7 @@ def organizations(request):
     return render(request, 'organizations.html', context)
 
 @login_required
+@require_http_methods(['GET'])
 def organization(request, organization_name):
     """View for managing Terraform Cloud data like Organizations and the API Keys
     that are required to interact with them.
