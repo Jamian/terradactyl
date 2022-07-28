@@ -10807,6 +10807,7 @@ a:focus {
     text-decoration: none;
     font-size: 1rem;
     font-weight: 800;
+    margin-top: 0.5rem;
     padding: 1.5rem 1rem;
     text-align: center;
     text-transform: uppercase;
@@ -10863,7 +10864,7 @@ a:focus {
 
 @media (min-width: 768px) {
     .sidebar {
-        width: 14rem !important;
+        width: 16.5rem !important;
     }
     .sidebar .nav-item .collapse {
         position: relative;
