@@ -31,7 +31,7 @@ def _index_for_name(ws_list, ws_name):
 
 @login_required
 @require_http_methods(['GET'])
-def get_table_states_data(request):
+def get_table_workspaces_data(request):
     """Constructs and returns a set of state objects in a format compatible with
     data tables. 
     """
@@ -40,30 +40,31 @@ def get_table_states_data(request):
 
     redundant_dependencies = True if redundant_deps_str == 'true' else False
 
-    start = int(request.GET.get('start'))
+    order_column_index = int(request.GET.get('order[0][column]'))
     length = int(request.GET.get('length'))
+    start = int(request.GET.get('start'))
     end = start + length
 
-    order_column_index = int(request.GET.get('order[0][column]'))
+    search_value = request.GET.get('search[value]')
 
+    base_query = Gizmo().g.V().hasLabel(Workspace.label)
+    if search_value:
+        base_query = base_query.has('name', TextP.containing(search_value))
+
+    # Handle Redundant Dependencies
     if redundant_dependencies:
-        order_by = 'count'
-        order_direction = Order.desc if request.GET.get('order[0][dir]') == 'desc' else Order.asc
-
-        if order_column_index == 2: # Handle others?
-            order_by = 'count'
-
-        search_value = request.GET.get('search[value]')
-        if search_value:
-            # TODO : Refactor queries this into Workspace?
-            results = Gizmo().g.V().hasLabel(Workspace.label).has('name', TextP.containing(search_value)).project('workspace', 'count').by(valueMap('name', 'organization')).by(outE('depends_on').has('redundant', 'true').count()).filter_(select('count').is_(gte(1))).order().by(order_by, order_direction).range_(start, end).toList()
-        else:
-            # results = Gizmo().g.V().hasLabel(Workspace.label).project('workspace', 'count').by(valueMap('name', 'organization')).by(outE('depends_on').has('redundant', 'true').count()).filter(select('count').is_(gte(1))).order().by(order_by, order_direction).range(start, end).toList()
-            results = Gizmo().g.V().hasLabel(Workspace.label).project('workspace', 'count').by(valueMap('name', 'organization')).by(outE('depends_on').has('redundant', 'true').count()).filter_(select('count').is_(gte(1))).order().by(order_by, order_direction).range_(start, end).toList()
-
+        base_query = base_query.project('workspace', 'count').by(valueMap('name', 'organization'))
+        base_query = base_query.by(outE('depends_on').has('redundant', 'true').count()).filter_(select('count').is_(gte(1)))
     else:
-        # Placeholder for more tables?
-        results = []
+        base_query = base_query.valueMap('name', 'organization')
+
+    # Handle Ordering
+    order_direction = Order.desc if request.GET.get('order[0][dir]') == 'desc' else Order.asc
+    order_by_col_index = request.GET.get('order[0][column]')
+    order_column_name = request.GET.get(f'columns[{order_by_col_index}][name]')
+    base_query = base_query.order().by(order_column_name, order_direction).range_(start, end)
+
+    results = base_query.toList()
 
     response_data = {
         'recordsTotal': len(results),
@@ -72,14 +73,17 @@ def get_table_states_data(request):
     }
 
     for r in results:
-        response_data['data'].append([r['workspace']['name'], r['workspace']['organization'], r['count']])
+        if redundant_dependencies:
+            response_data['data'].append([r['workspace']['name'], r['workspace']['organization'], r['count']])
+        else:
+            response_data['data'].append([r['name'], r['organization']])
 
     return JsonResponse(response_data)
 
 
 @login_required
 @require_http_methods(['GET'])
-def get_graph_states_data(request):
+def get_graph_workspaces_data(request):
     """Constructs and returns the dataset required to populate a graph of states.
     """
     data = {
@@ -148,7 +152,7 @@ def get_graph_states_data(request):
 
 @login_required
 @require_http_methods(['GET'])
-def get_state_resources(request, state_name):
+def get_workspace_resources(request, state_name):
     is_refresh_str = request.GET.get('refresh')
     is_refresh = True if is_refresh_str == 'true' else False
 
@@ -245,7 +249,7 @@ def humanize_created_at(created_at_raw):
 
 @login_required
 @require_http_methods(['GET'])
-def get_state_run_order(request, state_name):
+def get_workspace_run_order(request, state_name):
     data = {'nodes': [], 'links': []}
     ws = Workspace.vertices.get(name=state_name)
     chain = ws.get_chain()
@@ -386,7 +390,7 @@ def get_state_run_order(request, state_name):
 
 @login_required
 @require_http_methods(['GET'])
-def get_state(request, state_name):
+def get_workspace(request, state_name):
     data = {'nodes': [], 'links': []}
 
     is_sync_str = request.GET.get('sync')

@@ -36,8 +36,8 @@ def index(request):
 
 @login_required
 @require_http_methods(['GET'])
-def state(request, state_name):
-    """View for showing information about an individual State. Shows basic statistics
+def workspace(request, state_name):
+    """View for showing information about an individual Workspace. Shows basic statistics
     liek resource counts, age etc. APIs are called post load to fetch the network
     graphs and run orders.
 
@@ -82,12 +82,23 @@ def state(request, state_name):
             'growth': charts_data_growth
         }
     }
-    return render(request, 'state.html', context)
+    return render(request, 'workspace.html', context)
 
 
 @login_required
 @require_http_methods(['GET'])
-def states(request):
+def workspaces(request):
+    """View for the main network page that visualizes and allows users to explore their whole State network.
+    APIs are called post load for fetching the actual network. Initial load does populate the
+    page with basic statistics like growth over time, total states and dependencies.
+    """
+    
+
+    return render(request, 'workspaces.html', {})
+
+@login_required
+@require_http_methods(['GET'])
+def workspaces_network(request):
     """View for the main network page that visualizes and allows users to explore their whole State network.
     APIs are called post load for fetching the actual network. Initial load does populate the
     page with basic statistics like growth over time, total states and dependencies.
@@ -113,7 +124,7 @@ def states(request):
         'labels': []
     }, ResourceInstance.vertices.count()  # TODO : This needs to exclude terraform_remote_state?
 
-    return render(request, 'states.html', {
+    return render(request, 'workspaces-network.html', {
         'stats': {
             'state_count': Workspace.vertices.count(),
             'dependency_count': Gizmo().count_edges('depends_on'),

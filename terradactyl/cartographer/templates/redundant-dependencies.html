@@ -76,7 +76,7 @@
                         <div class="card-body">
                             <div class="table-responsive">
                                 <div id="dataTable_wrapper" class="dataTables_wrapper">
-                                <table class="table dataTable" id="tfVersionsDataTable" width="100%" cellspacing="0" role="grid" aria-describedby="dataTable_info" style="width: 100%;">
+                                <table class="table dataTable" id="redundantDepsDataTable" width="100%" cellspacing="0" role="grid" aria-describedby="dataTable_info" style="width: 100%;">
                                     <thead>
                                         <tr role="row">
                                             <th>Workspace</th>
@@ -93,7 +93,7 @@
                                                 <td>{{w.r_dependency_count}}</td>
                                                 <td>
                                                     <div class="btn btn-info disabled" @click="syncOrganization('{{org.name}}')" v-bind:class="{ disabled: syncBtnDisabled['{{org.name}}'] }">Synchronize</div>
-                                                    <div class="btn btn-info" onclick="window.open('/states/{{w.name}}', '_blank'); return false;">View Workspace</div>
+                                                    <div class="btn btn-info" onclick="window.open('/workspaces/{{w.name}}', '_blank'); return false;">View Workspace</div>
                                                 </td>
                                             </tr>
                                         {% endfor %}
@@ -145,9 +145,10 @@
 
     <script>
         $(document).ready(function() {
-            var tfVersionsDataTable = $('#tfVersionsDataTable').DataTable({
+            var redundantDepsDataTable = $('#redundantDepsDataTable').DataTable({
                 serverSide: true,
-                ajax: '/api/v1/dt/states?redundant-dependencies=true',
+                ajax: '/api/v1/dt/workspaces?redundant-dependencies=true',
+                pageLength: 25,
                 order: [[2, 'desc']],
                 columns: [
                 { name: 'name', data: 0 },
@@ -167,14 +168,14 @@
             // Show NA Versions Toggle
             var showNAVersionsToggle = $('#terraformVersionShowNASwitch')
             showNAVersionsToggle.click(function(){
-                var naIndexes = tfVersionsDataTable
+                var naIndexes = redundantDepsDataTable
                 .rows()
                 .indexes()
                 .filter(function (value, index ) {
-                    return 'N/A' === tfVersionsDataTable.row(value).data()[2]
+                    return 'N/A' === redundantDepsDataTable.row(value).data()[2]
                 })
                 console.log(naIndexes)
-                tfVersionsDataTable.rows(naIndexes).remove().draw()
+                redundantDepsDataTable.rows(naIndexes).remove().draw()
             })
         });
 
