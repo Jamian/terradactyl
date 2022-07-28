@@ -61,7 +61,6 @@ class Workspace(Vertex):
             base_query = Gizmo().g.V()
             for k, v in kwargs.items():
                 base_query = base_query.has(k, v)
-
             if not Workspace.vertices.exists(**kwargs):
                 raise VertexDoesNotExistException
             else:
@@ -207,19 +206,22 @@ class Workspace(Vertex):
             terraform_version=v['terraform_version']
         ) for v in results]
 
-    def get_upstreams(self, redundant_only=False):
+    def get_upstreams(self, redundant=None):
         """Fetch a list of all Workspaces that this workspace is required by
 
         Args
-            redundant_only: if True only return redundant dependencies.
+            redundant: filters on the Edge redundant property. If not specified all dependencies are returned.
         Returns
             A list of Workspace names for all upstream Workspaces that depend on this workspace.
         """
-        redundant_str = str(redundant_only).lower()
-        if redundant_only:
-            return [v['name'][0] for v in Gizmo().g.V(self.v).inE('depends_on').has('redundant', redundant_str).outV().valueMap('name')]
-        else:
-            return [v['name'][0] for v in Gizmo().g.V(self.v).inE('depends_on').outV().valueMap('name')]
+        base_query = Gizmo().g.V(self.v).inE('depends_on')
+        if redundant != None:
+            if type(redundant) != bool:
+                raise TypeError(f'Parameter "redundant" must be a boolean.')
+            redundant_str = str(redundant).lower()
+            base_query = base_query.has('redundant', redundant_str)
+
+        return [v['name'][0] for v in base_query.outV().valueMap('name')]
 
     def get_dependencies(self, lookup_type=None, redundant=None):
         """Fetch a list of all Workspaces that this Workspace has a direct dependency on.

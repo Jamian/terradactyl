@@ -70,7 +70,7 @@ class Vertex:
             Returns
                 An integer maximum of the given property.
             """
-            return Gizmo().g.V().hasLabel(cls.label).values(prop).max().next()
+            return Gizmo().g.V().hasLabel(cls.label).values(prop).max_().next()
 
         @classmethod
         def exists(cls, **kwargs):
@@ -83,5 +83,4 @@ class Vertex:
             base_query = Gizmo().g.V().hasLabel(cls.label)
             for k, v in kwargs.items():
                 base_query = base_query.has(k, v)
-
             return base_query.elementMap().hasNext()

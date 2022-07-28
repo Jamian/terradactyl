@@ -216,6 +216,7 @@ class TerraformCloudClient():
                     workspace_dict['depends_on'][namespace] = {
                         'workspace_name': workspace_name,
                         'organization': dr['instances'][0]['attributes']['config']['value']['organization'],
+                        'lookup_type': dr['type'],
                         'redundant': redundant
                         # TODO : Modules have remote_states that are required but not used. So although redundant they are required.
                     }

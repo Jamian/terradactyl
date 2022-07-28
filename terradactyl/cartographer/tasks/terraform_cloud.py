@@ -1,15 +1,13 @@
 import datetime
 import logging
 
-from celery import chord, group, shared_task
+from celery import group, shared_task
 from celery.result import AsyncResult
-from django.http import HttpResponse, JsonResponse
 
 from cartographer.gizmo.models import Resource, ResourceInstance, State, Workspace
 from cartographer.models import TerraformCloudOrganization, OrganizationSyncJob
-from cartographer.utils.terraform_cloud import build_namespace, TerraformCloudClient, WorkspaceNotFoundException
+from cartographer.utils.terraform_cloud import TerraformCloudClient, WorkspaceNotFoundException
 from cartographer.gizmo.models.exceptions import VertexDoesNotExistException
-
 
 BASE_URL = 'https://app.terraform.io'
 
@@ -192,7 +190,6 @@ def sync_workspace(self, workspace_info, sync_org_job_id=None):
             }
         sync_org_job_id (str): the unique id for the sync job.
     """
-
     organization = TerraformCloudOrganization.objects.get(name=workspace_info['organization'])
     if sync_org_job_id:
         sync_org_job = OrganizationSyncJob.objects.get(id=sync_org_job_id)   # TODO : Handle does not exist
@@ -201,6 +198,7 @@ def sync_workspace(self, workspace_info, sync_org_job_id=None):
     workspace_name = workspace_info['name']
 
     workspace_dict = tfc_client.workspace(workspace_name, workspace_info['organization'])
+
     # Create the workspace.
     ws = Workspace.vertices.update_or_create(
         name=workspace_name,
@@ -234,7 +232,7 @@ def sync_workspace(self, workspace_info, sync_org_job_id=None):
             if required_workspace_name != workspace_dict['name']:
                 try:
                     rws = Workspace.vertices.get(name=required_workspace_name, organization=dependency_info['organization'])
-                    ws.depends_on(rws, dependency_info['redundant'])
+                    ws.depends_on(rws, lookup_type=dependency_info['lookup_type'], redundant=dependency_info['redundant'])
                 except VertexDoesNotExistException:
                     res = AsyncResult(f'sync-workspace:' + required_workspace_name)
                     if not res.ready():
@@ -249,7 +247,7 @@ def sync_workspace(self, workspace_info, sync_org_job_id=None):
                         try:
                             # TODO : We need to handle broken dependencies - Workspace depends on a Workspace which no longer exists.
                             rws = Workspace.vertices.get(name=required_workspace_name, organization=dependency_info['organization'])
-                            ws.depends_on(rws, dependency_info['redundant'])
+                            ws.depends_on(rws, lookup_type=dependency_info['lookup_type'], redundant=dependency_info['redundant'])
                         except VertexDoesNotExistException:
                             logger.warning(f'Vertex did not exist for dependency {required_workspace_name} in {workspace_name}, despite successful job run.')
                             broken_dependencies.append({'name': required_workspace_name, 'organization': dependency_info['organization']})

@@ -34,7 +34,7 @@ Below show the two main screens - viewing your overall and individual state netw
 #### Running the Dev Environment
 1. Start redis - `brew services start redis`
 2. Confirm redis working (will reply PONG): `redis-cli ping`
-3. Start the TinkerPOP Gremlin server - `docker run -p 8182:8182 -d --name terradactyl-gremlin tinkerpop/gremlin-server:3.4.10`
+3. Start the TinkerPOP Gremlin server - `docker run -p 8182:8182 -d --name terradactyl-gremlin tinkerpop/gremlin-server:3.6`
 3. Start the Django sync web worker: `cd terradactyl && python manage.py runserver`
 4. Start the async worker: `cd terradactyl && celery -A terradactyl worker -l INFO`
 

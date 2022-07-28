@@ -20,6 +20,10 @@ class TestGizmoWorkspaces(TestCase):
     def setUp(self):
         self.g = Graph().traversal().withRemote(DriverRemoteConnection(f'ws://localhost:8182/gremlin', 'g'))
         self.g.V().drop().iterate()
+    
+    def tearDown(self):
+        self.g.V().drop().iterate()
+        return super().tearDown()
 
     def test_fetch_workspace_success(self):
         expected_id = '1234'

@@ -57,11 +57,11 @@ def state(request, state_name):
     }
 
     downstreams = workspace.get_dependencies()
-    redundant_downstreams = workspace.get_dependencies(redundant_only=True)
+    redundant_downstreams = workspace.get_dependencies(redundant=True)
     downstream_dependencies = [{'name': d, 'required': ('false' if d in redundant_downstreams else 'true')} for d in downstreams]
 
     upstreams = workspace.get_upstreams()
-    redundant_upstreams = workspace.get_upstreams(redundant_only=True)
+    redundant_upstreams = workspace.get_upstreams(redundant=True)
     upstream_dependencies = [{'name': d, 'required': 'false' if d in redundant_upstreams else 'true'} for d in upstreams]
 
     context = {

@@ -56,9 +56,10 @@ def get_table_states_data(request):
         search_value = request.GET.get('search[value]')
         if search_value:
             # TODO : Refactor queries this into Workspace?
-            results = Gizmo().g.V().hasLabel(Workspace.label).has('name', TextP.containing(search_value)).project('workspace', 'count').by(valueMap('name', 'organization')).by(outE('depends_on').has('redundant', 'true').count()).filter(select('count').is_(gte(1))).order().by(order_by, order_direction).range(start, end).toList()
+            results = Gizmo().g.V().hasLabel(Workspace.label).has('name', TextP.containing(search_value)).project('workspace', 'count').by(valueMap('name', 'organization')).by(outE('depends_on').has('redundant', 'true').count()).filter_(select('count').is_(gte(1))).order().by(order_by, order_direction).range_(start, end).toList()
         else:
-            results = Gizmo().g.V().hasLabel(Workspace.label).project('workspace', 'count').by(valueMap('name', 'organization')).by(outE('depends_on').has('redundant', 'true').count()).filter(select('count').is_(gte(1))).order().by(order_by, order_direction).range(start, end).toList()
+            # results = Gizmo().g.V().hasLabel(Workspace.label).project('workspace', 'count').by(valueMap('name', 'organization')).by(outE('depends_on').has('redundant', 'true').count()).filter(select('count').is_(gte(1))).order().by(order_by, order_direction).range(start, end).toList()
+            results = Gizmo().g.V().hasLabel(Workspace.label).project('workspace', 'count').by(valueMap('name', 'organization')).by(outE('depends_on').has('redundant', 'true').count()).filter_(select('count').is_(gte(1))).order().by(order_by, order_direction).range_(start, end).toList()
 
     else:
         # Placeholder for more tables?
@@ -124,7 +125,7 @@ def get_graph_states_data(request):
 
     for i, node in enumerate(data['nodes']):
         # Add non redundanut dependencies
-        for name in Workspace.vertices.get(name=node['name']).get_dependencies(required_only=True):
+        for name in Workspace.vertices.get(name=node['name']).get_dependencies(redundant=False):
             data['links'].append({
                 'source': i,
                 'target': _index_for_name(data['nodes'], name),
@@ -133,7 +134,7 @@ def get_graph_states_data(request):
                 'type': 'depends_on'
             })
         # Add redundant dependencies
-        for name in Workspace.vertices.get(name=node['name']).get_dependencies(redundant_only=True):
+        for name in Workspace.vertices.get(name=node['name']).get_dependencies(redundant=True):
             data['links'].append({
                 'source': i,
                 'target': _index_for_name(data['nodes'], name),

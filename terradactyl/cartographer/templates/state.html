@@ -266,16 +266,16 @@
                       </div>
                       <div class="card-body">
                             <button @click="syncState" class="btn btn-primary btn-icon-split" style="margin-bottom: .4rem;">
-                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-sync-alt" aria-hidden="true"></i></span>
+                                <span class="icon text-white-50"><i class="fas fa-sync-alt" aria-hidden="true"></i></span>
                                 <span class="text">Synchronize State</span>
                             </button>
                             </br>
                             <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#downstreamsReportModal">
-                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-file-alt" aria-hidden="true"></i></span>
+                                <span class="icon text-white-50"><i class="fas fa-file-alt" aria-hidden="true"></i></span>
                                 <span class="text">Downstreams Report</span>
                             </button>
                             <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#upstreamsReportModal">
-                                <span class="icon text-white-50" style="padding-top: 0.68rem"><i class="fas fa-file-alt" aria-hidden="true"></i></span>
+                                <span class="icon text-white-50"><i class="fas fa-file-alt" aria-hidden="true"></i></span>
                                 <span class="text">Upstreams Report</span>
                             </button>
                       </div>
@@ -437,7 +437,8 @@
 </html>
 
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js" integrity="sha384-t1tHLsbM7bYMJCXlhr0//00jSs7ZhsAhxgm191xFsyzvieTMCbUWKMhFg9I6ci8q" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js" integrity="sha384-N8EP0Yml0jN7e0DcXlZ6rt+iqKU9Ck6f1ZQ+j2puxatnBq4k9E8Q6vqBcY34LNbn" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@5.16.0/dist/d3.min.js" integrity="sha256-Xb6SSzhH3wEPC4Vy3W70Lqh9Y3Du/3KxPqI2JHQSpTw=" crossorigin="anonymous"></script>
+
     <script>
   {% include "components/state-info-panel.vue" %}
   {% include "components/run-order-d3-graph.vue" %}

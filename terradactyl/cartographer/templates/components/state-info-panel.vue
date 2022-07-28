@@ -41,11 +41,11 @@ Vue.component('state-info-panel', {
       <div class="card-body" style="margin-top: -50px;">
         <div class="my-2"></div>
         <a :href="'/states/' + stateName" class="btn btn-primary btn-icon-split" style="margin-left: -1.2rem;" v-bind:class="{ disabled: viewRunPathBtnDisabled }">
-            <span class="icon text-white-50" style="padding-top:10px"><i class="fas fa-play"></i></span>
+            <span class="icon text-white-50" ><i class="fas fa-play"></i></span>
             <span class="text">Explore</span>
         </a>
         <a target="_blank" :href="'https://app.terraform.io/app/{{ organization}}/workspaces/' + stateName" v-bind:class="{ disabled: viewRunPathBtnDisabled }" class="btn btn-info btn-icon-split">
-            <span class="icon text-white-50" style="padding-top:10px"><i class="fas fa-external-link-alt"></i></span>
+            <span class="icon text-white-50" ><i class="fas fa-external-link-alt"></i></span>
             <span class="text">View in Terraform Cloud</span>
         </a>
         </div>

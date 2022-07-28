@@ -9,7 +9,7 @@ class LoginView(View):
     def get(self, request):
         return render(request, 'login.html', {})
 
-    def put(self, request):
+    def post(self, request):
         email = request.POST['email']
         password = request.POST['password']
         user = authenticate(request, username=email, password=password)
