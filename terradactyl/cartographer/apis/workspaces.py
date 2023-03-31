@@ -152,7 +152,7 @@ def get_graph_workspaces_data(request):
 
 @login_required
 @require_http_methods(['GET'])
-def get_workspace_resources(request, state_name):
+def get_workspace_resources(request, workspace_name):
     is_refresh_str = request.GET.get('refresh')
     is_refresh = True if is_refresh_str == 'true' else False
 
@@ -162,7 +162,7 @@ def get_workspace_resources(request, state_name):
     if is_refresh:
         tfc_client = TerraformCloudClient()
 
-        workspace = Workspace.vertices.get(name=state_name)
+        workspace = Workspace.vertices.get(name=workspace_name)
         resources = tfc_client.resources(workspace.organization, workspace.name)
 
         # First pass, create resources.
@@ -189,7 +189,7 @@ def get_workspace_resources(request, state_name):
     }
 
     # Fetch the main state resources
-    ws = Workspace.vertices.get(name=state_name)
+    ws = Workspace.vertices.get(name=workspace_name)
     resources = ws.get_resources()
     for r in resources:
         data['nodes'].append({
@@ -249,9 +249,9 @@ def humanize_created_at(created_at_raw):
 
 @login_required
 @require_http_methods(['GET'])
-def get_workspace_run_order(request, state_name):
+def get_workspace_run_order(request, workspace_name):
     data = {'nodes': [], 'links': []}
-    ws = Workspace.vertices.get(name=state_name)
+    ws = Workspace.vertices.get(name=workspace_name)
     chain = ws.get_chain()
 
     workspaces_data = {}
@@ -266,7 +266,12 @@ def get_workspace_run_order(request, state_name):
             dep_name = path[i-1]['name'][0]
             if ws_name not in workspaces_data:
                 # If the workspace isn't in the data, add it with a required by: dependency
-                ws_state = Workspace.vertices.get(name=ws_name, organization=path[i+1]['organization'][0]).get_current_state_revision()
+                try:
+                    ws_state = Workspace.vertices.get(name=ws_name, organization=path[i+1]['organization'][0]).get_current_state_revision()
+                except VertexDoesNotExistException as error:
+                    logger.error(f'Unable to generate run order. Dependency in chain missing current state revision - {ws_name}')
+                    # TODO : We should return an error to the front end here and no display the graph - or  at least a warning.
+
                 dep_ws = Workspace.vertices.get(name=dep_name, organization=path[i-1]['organization'][0])
                 dep_state = dep_ws.get_current_state_revision()
                 workspaces_data[ws_name] = {
@@ -390,13 +395,13 @@ def get_workspace_run_order(request, state_name):
 
 @login_required
 @require_http_methods(['GET'])
-def get_workspace(request, state_name):
+def get_workspace(request, workspace_name):
     data = {'nodes': [], 'links': []}
 
     is_sync_str = request.GET.get('sync')
     is_sync = True if is_sync_str == 'true' else False
 
-    ws = Workspace.vertices.get(name=state_name)
+    ws = Workspace.vertices.get(name=workspace_name)
     # TODO : This url should be {org}/{workspace}
     if is_sync:
         sync_workspace.delay({

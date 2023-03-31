@@ -32,6 +32,13 @@ Below show the two main screens - viewing your overall and individual state netw
 2. Install python dependencies: `pip install -r requirements.txt`
 3. Install Docker - https://docs.docker.com/get-docker/
 #### Running the Dev Environment
+Environment Variables
+```
+export TERRADACTYL_DJANGO_DEBUG=True
+export DJANGO_SECRET_KEY=supersecret
+export TERRADACTYL_ENCRYPTED_CHAR_FIELD_KEY=oooimakey
+export TERRADACTYL_ENCRYPTED_CHAR_FIELD_SALT=oooimasalt
+```
 1. Start redis - `brew services start redis`
 2. Confirm redis working (will reply PONG): `redis-cli ping`
 3. Start the TinkerPOP Gremlin server - `docker run -p 8182:8182 -d --name terradactyl-gremlin tinkerpop/gremlin-server:3.6`

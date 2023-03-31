@@ -375,8 +375,6 @@ class Workspace(Vertex):
 
         Args
             target: the target State to set as the new current state
-
-        # TODO : This needs to also *remove* the current state, and set up the new has_revision....
         """
 
         first_time = False

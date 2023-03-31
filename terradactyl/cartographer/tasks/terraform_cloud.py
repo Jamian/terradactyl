@@ -87,7 +87,13 @@ def sync_resources(workspace_name, organization_name):
     tfc_client = TerraformCloudClient(api_key=organization.api_key.value)
 
     workspace = Workspace.vertices.get(name=workspace_name)
-    current_revision = workspace.get_current_state_revision()
+
+    try:
+        current_revision = workspace.get_current_state_revision()
+    except VertexDoesNotExistException:
+        logger.warning(f'Skipping sync resources for {workspace_name}: no state current state revision found.')
+        return
+
     resources_info = tfc_client.resources(workspace.organization, workspace_name)
     resources = resources_info['resources']
 
@@ -223,6 +229,7 @@ def sync_workspace(self, workspace_info, sync_org_job_id=None):
 
     retry=False
 
+    # Create new dependencies
     if 'depends_on' in workspace_dict:
         broken_dependencies = []
 
@@ -254,6 +261,12 @@ def sync_workspace(self, workspace_info, sync_org_job_id=None):
                     else:
                         logger.error(f'Could not create dependency {required_workspace_name} for {workspace_name}. Sync job status is {res.state}.')
 
+        # Delete any dependencies that have since been removed.
+        expected_dependencies = [info['workspace_name'] for _, info in workspace_dict['depends_on'].items()]
+        for existing_dependency in ws.get_dependencies():
+            if existing_dependency not in expected_dependencies:
+                logger.info(f'Removing existing dependency {existing_dependency} from {ws.name}')
+                ws.remove_dependency(Workspace.vertices.get(name=existing_dependency))
 
     if sync_org_job_id:
         # When a full organisation sync we can get broken Workspaces with bad dep links.

@@ -85,18 +85,6 @@
                                             <th>Actions</th>
                                     </thead>
                                     <tbody>
-                                        {% for w in workspace_data %}
-                                            <tr role="row">
-                                                <td>{{w.name}}</td>
-                                                <td>{{w.org_name}}</td>
-                                                <td>{{w.dependency_count}}</td>
-                                                <td>{{w.r_dependency_count}}</td>
-                                                <td>
-                                                    <div class="btn btn-info disabled" @click="syncOrganization('{{org.name}}')" v-bind:class="{ disabled: syncBtnDisabled['{{org.name}}'] }">Synchronize</div>
-                                                    <div class="btn btn-info" onclick="window.open('/workspaces/{{w.name}}', '_blank'); return false;">View Workspace</div>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
@@ -114,7 +102,7 @@
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; Terradactyl - Jamie West 2022</span>
+                        <span>Copyright &copy; Terradactyl - Jamie West 2023</span>
                     </div>
                 </div>
             </footer>
@@ -159,7 +147,7 @@
                     data: 0,
                     orderable: false,
                     render: function ( data, type, row, meta ) {
-                        return '<div class="btn btn-info" onclick="window.open(\'/states/' + data + '\', \'_blank\'); return false;">View Workspace</div>'
+                        return '<div class="btn btn-info" onclick="window.open(\'/workspaces/' + data + '\', \'_blank\'); return false;">View Workspace</div>'
                     }
                 }
               ]
