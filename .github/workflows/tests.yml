@@ -46,7 +46,7 @@ jobs:
 
     services:
       tinkerpop-gremlin:
-        image: tinkerpop/gremlin-server:3.4.10
+        image: tinkerpop/gremlin-server:3.6
         ports:
           - 8182:8182
 
