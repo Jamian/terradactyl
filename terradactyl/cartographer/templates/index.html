@@ -25,6 +25,7 @@
 
 <body id="page-top">
 
+    <div id="app">
     <!-- Page Wrapper -->
     <div id="wrapper">
 
@@ -49,19 +50,35 @@
 
                     <!-- Content Row -->
                     <div class="row">
-
-                        <!-- Total States -->
+                        <!-- Total Organzations -->
                         <div class="col-xl-3 col-md-6 mb-4">
                             <div class="card border-left shadow h-100 py-2">
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
                                             <div class="text-xs font-weight-bold text text-uppercase mb-1">
-                                                Total States</div>
+                                                Total Organzations</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.organization_count }} </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-sitemap fa-2x text-gray-300" aria-hidden="true"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Total Workspaces -->
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text text-uppercase mb-1">
+                                                Total Workspaces</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.state_count }} </div>
                                         </div>
                                         <div class="col-auto">
-                                            <i class="fas fa-file-code fa-2x text-gray-300" aria-hidden="true"></i>
+                                            <i class="fas fa-code fa-2x text-gray-300" aria-hidden="true"></i>
                                         </div>
                                     </div>
                                 </div>
@@ -90,7 +107,7 @@
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
                                             <div class="text-xs font-weight-bold text text-uppercase mb-1">
-                                                Avg Monthly Applies</div>
+                                                Avg Monthly State Changes</div>
                                             <div class="h5 mb-0 font-weight-bold text-gray-800" id="applies"> </div>
                                         </div>
                                         <div class="col-auto">
@@ -101,61 +118,91 @@
                             </div>
                         </div>
                     </div>
-                <div class="row">
-                    <div class="col-xl-4 col-lg-4">
-                      <div class="card border-left-primary shadow mb-4">
-                          <!-- Card Header - Dropdown -->
-                          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                              <h6 class="m-0 font-weight-bold text-primary">Redundant dependencies found!</h6>
+                    <div class="row">
+                        <div class="col-xl-4 col-lg-4">
+                          <div class="card shadow mb-4">
+                            <!-- Card Header - Dropdown -->
+                            <div class="card-header py-3 d-flex flex-row align-items-center
+                              justify-content-between">
+                              <h6 class="m-0 font-weight-bold text-primary">Redundant dependencies
+                                found!</h6>
+                            </div>
+                            <!-- Card Body -->
+                            <div class="card-body">
+                              Your Network currently has <strong>{{ stats.dependency_count }}</strong>
+                              inter-state dependencies, <strong>{{ stats.redundant_dependency_count }}</strong>
+                              of which are redundant. Click below to see about cleaning them up, this
+                              will keep access least privilege and also speed things up a little.
+                              <br/>
+                                <br/>
+                                  <button class="btn btn-info btn-icon-split" data-toggle="modal"
+                                    data-target="#upstreamsReportModal">
+                                    <span class="icon text-white-50"><i class="fas fa-list"
+                                        aria-hidden="true"></i></span>
+                                    <span class="text">View Redundant Dependencies</span>
+                                  </button>
+                                </div>
+                              </div>
                           </div>
-                          <!-- Card Body -->
-                          <div class="card-body">
-                            Your Network currently has <strong>{{ stats.dependency_count }}</strong> inter-state dependencies, <strong>{{ stats.redundant_dependency_count }}</strong> of which are redundant. Click below to see about cleaning them up, this will keep access least privilege and also speed things up a little.
-                            <br/>
-                            <br/>
-                            <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#upstreamsReportModal">
-                                <span class="icon text-white-50"><i class="fas fa-list" aria-hidden="true"></i></span>
-                                <span class="text">View Redundant Dependencies</span>
-                            </button>
-                          </div>
-                      </div>
-                    </div>
-
-                    <div class="col-xl-4 col-lg-4">
-                      <div class="card border-left-primary shadow mb-4">
-                          <!-- Card Header - Dropdown -->
-                          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        </div>
+                    <div class="row">
+                      
+                        {% comment %} <div class="col-xl-4 col-lg-4">
+                          <div class="card border-left-primary shadow mb-4">
+                            <!-- Card Header - Dropdown -->
+                            <div class="card-header py-3 d-flex flex-row align-items-center
+                              justify-content-between">
                               <h6 class="m-0 font-weight-bold text-primary">Cyclic dependencies found!</h6>
-                          </div>
-                          <!-- Card Body -->
-                          <div class="card-body">
-                            Your Network currently has <strong>2</strong> cyclic dependencies. If possible, see about removing them. Cyclic dependencies make Terraform ecosystems hard to manage, especially in disaster recovery scenarios.
-                            <br/>
-                            <br/>
-                            <button class="btn btn-info btn-icon-split" data-toggle="modal" data-target="#upstreamsReportModal">
-                                <span class="icon text-white-50"><i class="fas fa-list" aria-hidden="true"></i></span>
-                                <span class="text">View Cyclic Dependencies</span>
-                            </button>
-                          </div>
+                            </div>
+                            <!-- Card Body -->
+                            <div class="card-body">
+                              Your Network currently has <strong>0</strong> cyclic dependencies. If
+                              possible, see about removing them. Cyclic dependencies make Terraform
+                              ecosystems hard to manage, especially in disaster recovery scenarios.
+                              <br/>
+                                <br/>
+                                  <button class="btn btn-info btn-icon-split" data-toggle="modal"
+                                    data-target="#upstreamsReportModal">
+                                    <span class="icon text-white-50"><i class="fas fa-list"
+                                        aria-hidden="true"></i></span>
+                                    <span class="text">View Cyclic Dependencies</span>
+                                  </button>
+                                </div></div></div> {% endcomment %}
+                            <div class="col-xl-8 col-lg-8">
+                              <div class="card shadow mb-4">
+                                <!-- Card Header - Dropdown -->
+                                <div class="card-header py-3 d-flex flex-row align-items-center
+                                  justify-content-between">
+                                  <h6 class="m-0 font-weight-bold text">Provider Breakdown</h6>
+                                </div>
+                                <!-- Card Body -->
+                                <div class="card-body">
+                                  <div class="chart-bar pt-4 pb-2"><div class="chartjs-size-monitor"><div
+                                        class="chartjs-size-monitor-expand"><div class=""></div></div><div
+                                        class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                                    <canvas id="terraformProviderChart" class="chartjs-render-monitor"
+                                      data-ol-has-click-handler=""></canvas>
+                                  </div>
+                                </div>
                       </div>
+                    <div class="row">
+                        <div class="col-xl col-lg">
+                        <div class="card shadow">
+                            <!-- Card Header - Dropdown -->
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Daily State Change</h6>
+                            </div>
+                            <!-- Card Body -->
+                            <div class="card-body">
+                                <div id="cal-heatmap"></div>
+                                <button id="example-g-PreviousDomain-selector" style="margin-top: 20px;" class="btn" data-ol-has-click-handler=""><i class="fas fa-arrow-left" aria-hidden="true"></i></button>
+                                <button id="example-g-NextDomain-selector" style="margin-top: 20px;" class="btn" data-ol-has-click-handler=""><i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+                            </div>
+                        </div>
+                        </div>
                     </div>
-                  </div>
-                <div class="row">
-                    <div class="col-xl-10 col-lg-10">
-                      <div class="card border-left-primary shadow mb-4">
-                          <!-- Card Header - Dropdown -->
-                          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                              <h6 class="m-0 font-weight-bold text-primary">Daily State Change</h6>
-                          </div>
-                          <!-- Card Body -->
-                          <div class="card-body">
-                            <div id="cal-heatmap"></div>
-                            <button id="example-g-PreviousDomain-selector" style="margin-top: 20px;" class="btn" data-ol-has-click-handler=""><i class="fas fa-arrow-left" aria-hidden="true"></i></button>
-                            <button id="example-g-NextDomain-selector" style="margin-top: 20px;" class="btn" data-ol-has-click-handler=""><i class="fas fa-arrow-right" aria-hidden="true"></i></button>
-                          </div>
-                      </div>
                     </div>
-                  </div>
+                    </div>
                 </div>
                 <!-- /.container-fluid -->
             </div>
@@ -165,7 +212,7 @@
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; Terradactyl - Jamie West 2022</span>
+                        <span>Copyright &copy; Terradactyl - Jamie West 2023</span>
                     </div>
                 </div>
             </footer>
@@ -173,7 +220,7 @@
 
         </div>
         <!-- End of Content Wrapper -->
-
+    </div>
     </div>
     <!-- End of Page Wrapper -->
 
@@ -196,11 +243,12 @@
     <script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
 
     <!-- Heatmap -->
-    <script type="text/javascript">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js" integrity="sha384-t1tHLsbM7bYMJCXlhr0//00jSs7ZhsAhxgm191xFsyzvieTMCbUWKMhFg9I6ci8q" crossorigin="anonymous"></script>
+    <script>
         const requestOptions = {
             method: "GET",
         }
-        fetch('/api/v1/insights/daily-change', requestOptions).then(response => {
+        {% comment %} fetch('/api/v1/insights/daily-change', requestOptions).then(response => {
             response.json().then(data => {
 
                 $('#applies').text(data['stats']['avg_monthly_applies'])
@@ -220,9 +268,115 @@
                     domainDynamicDimension: false,
                 });
             })
-        })
+        }) {% endcomment %}
 
-    </script>
+        new Vue({
+            el: '#app',
+            delimiters: ["[[", "]]"],
+            data() {
+              return {
+                data: null,
+                stateName: 'None',
+                state: '',
+                terraformProviderPieChart: null,
+                hcolours: ['#2e59d9', '#17a673', '#ED461D', '#EDC645', '#E467CF', '#5E9FD4', '#5C5CFF', '#050227', '#EBBC6F', '#f59f3d', '#5595B4', '#94CCDB', '#012727', '#4F4940', '#8CE3C0', '#9CDCFC', '#453D52'],
+                bcolours: ['#4e73df', '#1cc88a', '#F06543', '#F0CF65', '#EA88DA', '#7EB2DD', '#7F7EFF', '#090446', '#EFC88B', '#f38c16', '#6EA4BF', '#A8D5E2', '#034748', '#60594D', '#A1E8CC', '#BCE7FD', '#574D68']
+              }
+            },
+            mounted() {
+              this.loadCharts();
+            },
+            methods: {
+              refreshTerraformProviderChart() {
+                var tvrhcolours = []
+                var tvrbcolours = []
+                for (var i = 0; i < {{ charts.terraform_providers.labels|length }}; i++) {
+                  tvrhcolours.push(this.hcolours[i % this.hcolours.length])
+                  tvrbcolours.push(this.bcolours[i % this.bcolours.length])
+                }
+        
+                var chartLabels = {{ charts.terraform_providers.labels|safe }}
+                var chartData = {{ charts.terraform_providers.data|safe }}
+        
+                if(this.groupByTerraformMajorVersion) {
+                  tempChartData = []
+                  tempChartLabels = []
+                  for (var i = 0; i < chartLabels.length; i++) {
+                    const majorVersion = chartLabels[i].split(".")[0] + '.' + chartLabels[i].split(".")[1]; // returns : 0.12, 0.13 etc
+                    if(tempChartLabels.indexOf(majorVersion) == -1) {
+                      tempChartLabels.push(majorVersion)
+                    }
+                    const di = tempChartLabels.indexOf(majorVersion)
+                    if(tempChartData[di] != undefined) {
+                      tempChartData[di] = tempChartData[di] + parseInt(chartData[i]) // Add this minor count to the major count
+                    } else {
+                      tempChartData[di] = parseInt(chartData[i])
+                    }
+                  }
+                  chartLabels = tempChartLabels
+                  chartData = tempChartData
+                }
+        
+                this.terraformProviderPieChart.data.labels.pop();
+                this.terraformProviderPieChart.data.labels = chartLabels
+                this.terraformProviderPieChart.data.datasets[0].data = chartData
+                this.terraformProviderPieChart.update()
+              },
+              loadTerraformProviderChart() {
+                var tvrhcolours = []
+                var tvrbcolours = []
+        
+                for (var i = 0; i < {{ charts.terraform_providers.labels|length }}; i++) {
+                  tvrhcolours.push(this.hcolours[i % this.hcolours.length])
+                  tvrbcolours.push(this.bcolours[i % this.bcolours.length])
+                }
+        
+                var chartLabels = {{ charts.terraform_providers.labels|safe }}
+                var chartData = {{ charts.terraform_providers.data|safe }}
+        
+                // Set new default font family and font color to mimic Bootstrap's default styling
+                Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+                Chart.defaults.global.defaultFontColor = '#858796';
+        
+                // Terraform Version Distribution
+                var ctx = document.getElementById("terraformProviderChart");
+                this.terraformProviderPieChart = new Chart(ctx, {
+                  type: 'doughnut',
+                  data: {
+                    labels: chartLabels,
+                    datasets: [{
+                      data: chartData,
+                      backgroundColor: tvrbcolours,
+                      hoverBackgroundColor: tvrhcolours,
+                      hoverBorderColor: "rgba(234, 236, 244, 1)",
+                    }],
+                  },
+                  options: {
+                    maintainAspectRatio: false,
+                    tooltips: {
+                      backgroundColor: "rgb(255,255,255)",
+                      bodyFontColor: "#858796",
+                      borderColor: '#dddfeb',
+                      borderWidth: 1,
+                      xPadding: 15,
+                      yPadding: 15,
+                      displayColors: false,
+                      caretPadding: 10,
+                    },
+                    legend: {
+                      display: true,
+                      position: 'right'
+                    },
+                    cutoutPercentage: 80,
+                  },
+                });
+              },
+              loadCharts() {
+                this.loadTerraformProviderChart()
+              }
+            }
+          })
+        </script>
 </body>
 
 </html>

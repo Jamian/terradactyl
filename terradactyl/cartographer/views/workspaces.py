@@ -10,8 +10,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 
+from cartographer.models import TerraformCloudOrganization
+
 from cartographer.gizmo import Gizmo
-from cartographer.gizmo.models import Resource, ResourceInstance, Workspace
+from cartographer.gizmo.models import Resource, ResourceInstance, State, Workspace
 from cartographer.gizmo.models.exceptions import VertexDoesNotExistException
 
 
@@ -23,11 +25,24 @@ def index(request):
     if not request.user.is_authenticated:
         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
+    # Account for the fact the above is a quick count of combinations, not individuals.
+    # TODO : Do this on resource so we know a proper ratio of provider usage?
+    terraform_provider_dist = ResourceInstance.vertices.count_by('provider')
+    sorted_terraform_provider_dist = dict(sorted(terraform_provider_dist.items(), key=lambda item: item[1], reverse=True)) 
+    charts_terraform_provider_distribution = {
+        'data': json.dumps([d for d in sorted_terraform_provider_dist.values()]),
+        'labels': json.dumps([k for k in sorted_terraform_provider_dist.keys()])
+    }
+
     context = {
         'stats': {
             'state_count': Workspace.vertices.count(),
             'dependency_count': Gizmo().count_edges('depends_on'),
-            'redundant_dependency_count': Gizmo().count_edges('depends_on', redundant='true')
+            'redundant_dependency_count': Gizmo().count_edges('depends_on', redundant='true'),
+            'organization_count': TerraformCloudOrganization.objects.count()
+        },
+        'charts': {
+            'terraform_providers': charts_terraform_provider_distribution,
         }
     }
 
@@ -36,7 +51,7 @@ def index(request):
 
 @login_required
 @require_http_methods(['GET'])
-def workspace(request, state_name):
+def workspace(request, workspace_name):
     """View for showing information about an individual Workspace. Shows basic statistics
     liek resource counts, age etc. APIs are called post load to fetch the network
     graphs and run orders.
@@ -44,7 +59,7 @@ def workspace(request, state_name):
     Args
         state_name: the name of the state being viewed
     """
-    workspace = Workspace.vertices.get(name=state_name)
+    workspace = Workspace.vertices.get(name=workspace_name)
 
     charts_data_growth, _ = _generate_growth_chart_data([workspace], calculate_cumsum=False)
     current_revision = workspace.get_current_state_revision()
@@ -65,7 +80,7 @@ def workspace(request, state_name):
     upstream_dependencies = [{'name': d, 'required': 'false' if d in redundant_upstreams else 'true'} for d in upstreams]
 
     context = {
-        'state_name': state_name,
+        'state_name': workspace_name,
         'organization': workspace.organization,
         'downstream_dependencies': downstream_dependencies,
         'upstream_dependencies': upstream_dependencies,

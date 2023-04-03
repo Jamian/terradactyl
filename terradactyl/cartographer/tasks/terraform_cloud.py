@@ -46,7 +46,6 @@ def sync_organization(org_name: str):
     sync_org_job.state = OrganizationSyncJob.IMPORTING_STATE_HISTORY
     sync_org_job.save()
 
-
     sync_revisions_tasks = group(sync_revisions.s(workspace_name=workspace['name'], organization_name=org_name, initial_run=True)
                                  .set(task_id=f'sync-revisions:' + workspace['name']) for workspace in workspaces)
 
@@ -55,9 +54,11 @@ def sync_organization(org_name: str):
     while not result.ready():
         continue
 
-    sync_org_job.state = OrganizationSyncJob.IMPORTING_RESOURCES
     sync_org_job.save()
 
+    sync_org_job.state = OrganizationSyncJob.IMPORTING_RESOURCES
+    sync_org_job.save()
+    
     sync_resources_tasks = group(sync_resources.s(workspace_name=workspace['name'], organization_name=org_name).set(task_id=f'sync-resources:' + workspace['name']) for workspace in workspaces)
     result = sync_resources_tasks.apply_async()
 
@@ -87,7 +88,13 @@ def sync_resources(workspace_name, organization_name):
     tfc_client = TerraformCloudClient(api_key=organization.api_key.value)
 
     workspace = Workspace.vertices.get(name=workspace_name)
-    current_revision = workspace.get_current_state_revision()
+
+    try:
+        current_revision = workspace.get_current_state_revision()
+    except VertexDoesNotExistException:
+        logger.warning(f'Skipping sync resources for {workspace_name}: no state current state revision found.')
+        return
+
     resources_info = tfc_client.resources(workspace.organization, workspace_name)
     resources = resources_info['resources']
 
@@ -107,6 +114,7 @@ def sync_resources(workspace_name, organization_name):
                 index_key=instance['index_key'],
                 iid=instance['iid'],
                 state_id=current_revision.state_id,
+                provider=resource['provider'].replace('provider[\"', '').replace('\"]', ''),
                 resource_type=resource['resource_type']
             )
             logger.debug(f'Adding instance {instance["iid"]} to {r.namespace}')
@@ -175,7 +183,7 @@ def sync_revisions(workspace_name, organization_name, initial_run):
         logger.info(f'Created {total_revisions} revisions for {workspace_name}...')
 
 
-@shared_task(bind=True, max_retries=50, default_retry_delay=6)
+@shared_task(bind=True, max_retries=100, default_retry_delay=10)
 def sync_workspace(self, workspace_info, sync_org_job_id=None):
     """Fetches the most up to date Workspace from the remote and syncs any state changes or
     changes to dependencies.
@@ -223,6 +231,7 @@ def sync_workspace(self, workspace_info, sync_org_job_id=None):
 
     retry=False
 
+    # Create new dependencies
     if 'depends_on' in workspace_dict:
         broken_dependencies = []
 
@@ -254,6 +263,12 @@ def sync_workspace(self, workspace_info, sync_org_job_id=None):
                     else:
                         logger.error(f'Could not create dependency {required_workspace_name} for {workspace_name}. Sync job status is {res.state}.')
 
+        # Delete any dependencies that have since been removed.
+        expected_dependencies = [info['workspace_name'] for _, info in workspace_dict['depends_on'].items()]
+        for existing_dependency in ws.get_dependencies():
+            if existing_dependency not in expected_dependencies:
+                logger.info(f'Removing existing dependency {existing_dependency} from {ws.name}')
+                ws.remove_dependency(Workspace.vertices.get(name=existing_dependency))
 
     if sync_org_job_id:
         # When a full organisation sync we can get broken Workspaces with bad dep links.
@@ -271,6 +286,5 @@ def sync_workspace(self, workspace_info, sync_org_job_id=None):
                         logger.error(f'Dependency {broken_dependency["name"]} has not been created locally, but it does exist on the remote.')
                     except WorkspaceNotFoundException:
                         logger.error(f'Dependency {broken_dependency["name"]} does not exist. Has the Workspace been deleted?')
-    else:
-        if retry:
-            self.retry()
+    if retry:
+        self.retry()
