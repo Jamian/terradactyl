@@ -53,7 +53,7 @@ class TerraformCloudClient():
             workspaces: the dict to update with the fetched workspaces.
         """
         pagination_url = f'https://app.terraform.io/api/v2/organizations/{organization_name}/workspaces?page%5Bnumber%5D={page_number}&page%5Bsize%5D={PAGE_SIZE}'
-        workspaces_response = requests.get(pagination_url, headers=self._headers)
+        workspaces_response = requests.get(pagination_url, headers=self._headers, timeout=5)
         response_json = workspaces_response.json()
         try:
             for workspace_json in response_json['data']:
@@ -90,12 +90,12 @@ class TerraformCloudClient():
             state_resources: list of resources lifted straight from the state file
         """
         state_lookup_url = self.base_url + state_lookup_path
-        state_response = requests.get(state_lookup_url, headers=self._headers)
+        state_response = requests.get(state_lookup_url, headers=self._headers, timeout=5)
         state_response_json = state_response.json()
 
         hosted_state_dl_url = state_response_json['data']['attributes']['hosted-state-download-url']
 
-        state_response = requests.get(hosted_state_dl_url, self._headers)
+        state_response = requests.get(hosted_state_dl_url, self._headers, timeout=5)
         state = state_response.json()
 
         current_state = {}
@@ -178,7 +178,7 @@ class TerraformCloudClient():
         """
 
         workspace_dict = {}
-        workspace_request_response = requests.get(self.base_url + f'/api/v2/organizations/{organization_name}/workspaces/{workspace_name}', headers=self._headers)
+        workspace_request_response = requests.get(self.base_url + f'/api/v2/organizations/{organization_name}/workspaces/{workspace_name}', headers=self._headers, timeout=5)
 
         response_json = workspace_request_response.json()
 
@@ -257,7 +257,7 @@ class TerraformCloudClient():
 
         """
         workspaces = []
-        initial_request_response = requests.get(self.base_url + f'/api/v2/organizations/{organization_name}/workspaces?page%5Bsize%5D={PAGE_SIZE}', headers=self._headers)
+        initial_request_response = requests.get(self.base_url + f'/api/v2/organizations/{organization_name}/workspaces?page%5Bsize%5D={PAGE_SIZE}', headers=self._headers, timeout=5)
         response_json = initial_request_response.json()
 
         if 'meta' not in response_json:
@@ -276,7 +276,7 @@ class TerraformCloudClient():
         resources = {
             'resources': {}
         }
-        response = requests.get(self.base_url + f'/api/v2/organizations/{organization_name}/workspaces/{workspace_name}', headers=self._headers)
+        response = requests.get(self.base_url + f'/api/v2/organizations/{organization_name}/workspaces/{workspace_name}', headers=self._headers, timeout=5)
         workspace_json = response.json()
         state_lookup_path = workspace_json['data']['relationships']['current-state-version']['links']['related']
 
@@ -354,7 +354,7 @@ class TerraformCloudClient():
             'filter[organization][name]': organization_name
         }
 
-        response = requests.get(self.base_url + f'/api/v2/state-versions', headers=self._headers, params=params)
+        response = requests.get(self.base_url + f'/api/v2/state-versions', headers=self._headers, params=params, timeout=5)
         states_versions_response = response.json()
 
         states = []
@@ -376,7 +376,7 @@ class TerraformCloudClient():
                     total_pages = states_versions_response['meta']['pagination']['total-pages']
             for state_version_info in states_versions_response['data']:
                 # Fetch the state for parsing
-                state_contents_response = requests.get(state_version_info['attributes']['hosted-state-download-url'])
+                state_contents_response = requests.get(state_version_info['attributes']['hosted-state-download-url'], timeout=5)
                 state_contents = state_contents_response.json()
 
                 state_info = {
@@ -404,12 +404,12 @@ class TerraformCloudClient():
                 'filter[organization][name]': organization_name,
                 'page[number]': page_number
             }
-            response = requests.get(self.base_url + f'/api/v2/state-versions', headers=self._headers, params=params)
+            response = requests.get(self.base_url + f'/api/v2/state-versions', headers=self._headers, params=params, timeout=5)
             pagination_state_response = response.json()
             if response.status_code == 200:
                 for state_version_info in pagination_state_response['data']:
                     # Fetch the state for parsing
-                    state_contents_response = requests.get(state_version_info['attributes']['hosted-state-download-url'])
+                    state_contents_response = requests.get(state_version_info['attributes']['hosted-state-download-url'], timeout=5)
                     state_contents = state_contents_response.json()
 
                     state_info = {
