@@ -293,6 +293,7 @@ class TerraformCloudClient():
                 'namespace': namespace,
                 'mode': resource['mode'],
                 'instances': [],
+                'provider': resource['provider'],
                 'depends_on': []
             }
             for instance in [ i for i in resource['instances'] if (resource['mode'] != 'data' and (resource['type'] not in ('terraform_remote_state', 'tfe_outputs')))]:
@@ -418,7 +419,7 @@ class TerraformCloudClient():
                         'serial': state_version_info['attributes']['serial'],
                         'created_at': parse_tf_datetime_str(state_version_info['attributes']['created-at']).timestamp(),
                         'resource_count': len(state_contents['resources']),
-                        'terraform_version': state_contents['terraform_version'],
+                        'terraform_version': state_contents['terraform_version']
                     }
 
                     if state_version_info['id'] not in state_ids_added:

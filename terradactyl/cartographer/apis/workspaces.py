@@ -329,7 +329,6 @@ def get_workspace_run_order(request, workspace_name):
                     })
 
     workspace_dependencies = {ws: workspaces_data[ws]['depends_on'] for ws in workspaces_data}
-
     G = nx.DiGraph(workspace_dependencies)
     H = nx.path_graph(workspace_dependencies)
     G.add_nodes_from(H)

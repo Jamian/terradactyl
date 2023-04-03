@@ -46,7 +46,6 @@ def sync_organization(org_name: str):
     sync_org_job.state = OrganizationSyncJob.IMPORTING_STATE_HISTORY
     sync_org_job.save()
 
-
     sync_revisions_tasks = group(sync_revisions.s(workspace_name=workspace['name'], organization_name=org_name, initial_run=True)
                                  .set(task_id=f'sync-revisions:' + workspace['name']) for workspace in workspaces)
 
@@ -55,9 +54,11 @@ def sync_organization(org_name: str):
     while not result.ready():
         continue
 
-    sync_org_job.state = OrganizationSyncJob.IMPORTING_RESOURCES
     sync_org_job.save()
 
+    sync_org_job.state = OrganizationSyncJob.IMPORTING_RESOURCES
+    sync_org_job.save()
+    
     sync_resources_tasks = group(sync_resources.s(workspace_name=workspace['name'], organization_name=org_name).set(task_id=f'sync-resources:' + workspace['name']) for workspace in workspaces)
     result = sync_resources_tasks.apply_async()
 
@@ -113,6 +114,7 @@ def sync_resources(workspace_name, organization_name):
                 index_key=instance['index_key'],
                 iid=instance['iid'],
                 state_id=current_revision.state_id,
+                provider=resource['provider'].replace('provider[\"', '').replace('\"]', ''),
                 resource_type=resource['resource_type']
             )
             logger.debug(f'Adding instance {instance["iid"]} to {r.namespace}')
@@ -181,7 +183,7 @@ def sync_revisions(workspace_name, organization_name, initial_run):
         logger.info(f'Created {total_revisions} revisions for {workspace_name}...')
 
 
-@shared_task(bind=True, max_retries=50, default_retry_delay=6)
+@shared_task(bind=True, max_retries=100, default_retry_delay=10)
 def sync_workspace(self, workspace_info, sync_org_job_id=None):
     """Fetches the most up to date Workspace from the remote and syncs any state changes or
     changes to dependencies.
@@ -284,6 +286,5 @@ def sync_workspace(self, workspace_info, sync_org_job_id=None):
                         logger.error(f'Dependency {broken_dependency["name"]} has not been created locally, but it does exist on the remote.')
                     except WorkspaceNotFoundException:
                         logger.error(f'Dependency {broken_dependency["name"]} does not exist. Has the Workspace been deleted?')
-    else:
-        if retry:
-            self.retry()
+    if retry:
+        self.retry()

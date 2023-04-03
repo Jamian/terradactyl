@@ -17,13 +17,14 @@ class ResourceInstance(Vertex):
         label = LABEL
 
         @classmethod
-        def create(cls, state_id: str, index_key: str, iid: str, resource_type: str):
+        def create(cls, state_id: str, index_key: str, iid: str, resource_type: str, provider: str):
             last_updated = str(datetime.datetime.utcnow().timestamp())
             v = Gizmo().g.addV(ResourceInstance.label) \
                 .property('index_key', index_key) \
                 .property('iid', iid) \
                 .property('state_id', state_id) \
                 .property('resource_type', resource_type) \
+                .property('provider', provider) \
                 .property('last_updated', last_updated).next()
             return ResourceInstance(
                 _id=v.id,
@@ -31,6 +32,7 @@ class ResourceInstance(Vertex):
                 index_key=index_key,
                 iid=iid,
                 resource_type=resource_type,
+                provider=provider,
                 last_updated=last_updated)
 
         @classmethod
@@ -56,20 +58,23 @@ class ResourceInstance(Vertex):
                     state_id=element_map['state_id'],
                     iid=element_map['iid'],
                     resource_type=element_map['resource_type'],
+                    provider=element_map['provider'],
                     last_updated=element_map['last_updated']
                 )
 
         @classmethod
-        def update_or_create(cls, state_id: str, index_key: str, iid: str, resource_type: str):
+        def update_or_create(cls, state_id: str, index_key: str, iid: str, resource_type: str, provider: str):
             try:
                 r = ResourceInstance.vertices.get(
                     index_key=index_key,
                     state_id=state_id,
                     iid=iid,
+                    provider=provider,
                     resource_type=resource_type)
                 r.state_id = state_id
                 r.iid = iid
                 r.index_key = index_key
+                r.provider = provider
                 r.resource_type = resource_type
                 r.save()
             except VertexDoesNotExistException:
@@ -77,6 +82,7 @@ class ResourceInstance(Vertex):
                     index_key=index_key,
                     state_id=state_id,
                     iid=iid,
+                    provider=provider,
                     resource_type=resource_type
                 )
             return r
@@ -85,12 +91,13 @@ class ResourceInstance(Vertex):
     def v(self):
         return Gizmo().g.V().hasLabel(ResourceInstance.label).has('state_id', self.state_id).has('index_key', self.index_key).has('iid', self.iid).has('resource_type', self.resource_type).next()
 
-    def __init__(self, _id: int, state_id: str, index_key: str, iid: str, resource_type: str, last_updated: str = None):
+    def __init__(self, _id: int, state_id: str, index_key: str, iid: str, resource_type: str, provider: str, last_updated: str = None):
         self._id = _id
         self.state_id = state_id
         self.iid = iid
         self.index_key = index_key
         self.resource_type = resource_type
+        self.provider = provider
         if last_updated:
             self.last_updated = last_updated
 
@@ -115,4 +122,5 @@ class ResourceInstance(Vertex):
             .property('resource_type', self.resource_type) \
             .property('index_key', self.index_key) \
             .property('iid', self.iid) \
+            .property('provider', self.provider) \
             .property('last_updated', self.last_updated).next()

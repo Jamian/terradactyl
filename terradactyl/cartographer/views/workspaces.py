@@ -10,8 +10,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 
+from cartographer.models import TerraformCloudOrganization
+
 from cartographer.gizmo import Gizmo
-from cartographer.gizmo.models import Resource, ResourceInstance, Workspace
+from cartographer.gizmo.models import Resource, ResourceInstance, State, Workspace
 from cartographer.gizmo.models.exceptions import VertexDoesNotExistException
 
 
@@ -23,11 +25,24 @@ def index(request):
     if not request.user.is_authenticated:
         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
+    # Account for the fact the above is a quick count of combinations, not individuals.
+    # TODO : Do this on resource so we know a proper ratio of provider usage?
+    terraform_provider_dist = ResourceInstance.vertices.count_by('provider')
+    sorted_terraform_provider_dist = dict(sorted(terraform_provider_dist.items(), key=lambda item: item[1], reverse=True)) 
+    charts_terraform_provider_distribution = {
+        'data': json.dumps([d for d in sorted_terraform_provider_dist.values()]),
+        'labels': json.dumps([k for k in sorted_terraform_provider_dist.keys()])
+    }
+
     context = {
         'stats': {
             'state_count': Workspace.vertices.count(),
             'dependency_count': Gizmo().count_edges('depends_on'),
-            'redundant_dependency_count': Gizmo().count_edges('depends_on', redundant='true')
+            'redundant_dependency_count': Gizmo().count_edges('depends_on', redundant='true'),
+            'organization_count': TerraformCloudOrganization.objects.count()
+        },
+        'charts': {
+            'terraform_providers': charts_terraform_provider_distribution,
         }
     }
 
